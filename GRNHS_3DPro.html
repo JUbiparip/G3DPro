@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greenhouse 3D Pro – Complete Design Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root {
+  --bg: #0b0f18;
+  --panel-bg: #131c2a;
+  --text: #dde3ee;
+  --accent: #4ade80;
+  --accent2: #60a5fa;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --border: #2d3a50;
+  --input-bg: #0a121f;
+  --radius: 6px;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+  --panel-width: 460px;
+}
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg); color:var(--text);
+  height:100vh; display:flex; overflow:hidden;
+  user-select:none;
+}
+#panel {
+  width: var(--panel-width);
+  min-width: 200px;
+  max-width: 680px;
+  background: var(--panel-bg);
+  display: flex; flex-direction: column;
+  padding: 6px; gap: 3px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 2px 0 20px rgba(0,0,0,.7);
+  border-right: 1px solid var(--border);
+  position: relative;
+  flex-shrink: 0;
+}
+#panelResizer {
+  width: 5px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  z-index: 20;
+  transition: background .15s;
+}
+#panelResizer:hover, #panelResizer.dragging { background: var(--accent); }
+.app-header {
+  display: flex; align-items: center; gap: 6px; padding: 4px 2px;
+}
+.app-header h1 {
+  font-size: .85rem; font-weight: 800; color: var(--accent); flex: 1;
+}
+.project-name-wrap {
+  display:flex; align-items:center; gap:4px;
+  background:var(--input-bg); border:1px solid var(--border);
+  border-radius:4px; padding:2px 6px;
+}
+.project-name-wrap span { font-size:.45rem; color:#6b7a99; }
+.project-name-wrap input {
+  background:transparent; border:none; color:var(--accent);
+  font-size:.65rem; font-weight:700; width:120px; outline:none;
+}
+.layer-tabs { display:flex; gap:2px; flex-wrap:wrap; }
+.layer-tab {
+  flex:1; min-width:42px; text-align:center;
+  padding:4px 1px; background:#1e2a3a;
+  border-radius:4px 4px 0 0; cursor:pointer;
+  font-size:.42rem; font-weight:700;
+  border:2px solid transparent; transition:all .15s;
+}
+.layer-tab:hover { border-color: var(--border); }
+.layer-tab.active { border-color:var(--accent); color:var(--accent); background:#0f2218; }
+.layer-content { display:none; flex-direction:column; gap:3px; }
+.layer-content.active { display:flex; }
+.form-group { display:flex; flex-direction:column; gap:1px; }
+.form-group label {
+  font-size:.47rem; font-weight:700; color:#6b7a99;
+  text-transform:uppercase; letter-spacing:.2px;
+}
+.form-group input,
+.form-group select {
+  background:var(--input-bg); border:1px solid var(--border);
+  color:#fff; padding:3px 5px; border-radius:3px;
+  font-size:.6rem; width:100%; font-family:inherit;
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline:2px solid var(--accent); outline-offset:1px;
+}
+.form-row { display:flex; gap:3px; align-items:flex-end; }
+.form-row .form-group { flex:1; }
+.readonly-input {
+  background:#1e2a3a !important;
+  border:1px dashed #4ade80 !important;
+  color:#4ade80 !important; font-weight:700;
+  cursor:default;
+}
+.btn {
+  padding:4px 7px; border:none; border-radius:3px;
+  font-weight:700; font-size:.5rem; cursor:pointer;
+  text-transform:uppercase; display:flex; align-items:center;
+  justify-content:center; gap:2px; transition:all .2s;
+}
+.btn:focus { outline:2px solid var(--accent2); outline-offset:2px; }
+.btn-accent  { background:var(--accent); color:#000; }
+.btn-blue    { background:var(--accent2); color:#000; }
+.btn-orange  { background:var(--orange); color:#000; }
+.btn-purple  { background:var(--purple); color:#000; }
+.btn-outline { background:transparent; border:2px solid var(--border); color:#fff; }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+.btn-sm      { padding:2px 5px; font-size:.42rem; }
+.btn-danger  { background:var(--danger); color:#fff; }
+.custom-elements-list { max-height:52px; overflow-y:auto; margin-top:1px; font-size:.4rem; }
+.custom-element-item {
+  display:flex; justify-content:space-between; align-items:center;
+  background:#1e2a3a; border-radius:2px; padding:1px 3px; margin-bottom:1px;
+}
+.custom-element-item button {
+  background:var(--danger); border:none; color:#fff;
+  border-radius:2px; padding:0 3px; cursor:pointer; font-size:.4rem;
+}
+.section-label {
+  font-size:.5rem; font-weight:800; color:var(--accent2);
+  padding:3px 0; border-bottom:1px solid var(--border); margin-bottom:2px;
+}
+.toggle-row {
+  display:flex; align-items:center; gap:4px; font-size:.48rem;
+}
+.toggle-row label { display:flex; align-items:center; gap:4px; cursor:pointer; }
+.toggle-row input[type=checkbox] { accent-color:var(--accent); }
+.calc-panel { background:#0a121f; border:1px solid var(--border); border-radius:4px; padding:5px; }
+.calc-result { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+.calc-item { background:#131c2a; border-radius:3px; padding:3px 4px; text-align:center; }
+.calc-item .val { font-size:.6rem; font-weight:800; color:var(--accent); }
+.calc-item .lbl { font-size:.38rem; color:#6b7a99; margin-top:1px; }
+.status-ok     { color:#4ade80 !important; }
+.status-warn   { color:#fbbf24 !important; }
+.status-danger { color:#f87171 !important; }
+.wind-bar { background:#1e2a3a; border-radius:3px; height:8px; overflow:hidden; }
+.wind-fill { height:100%; border-radius:3px; transition:width .4s; }
+.troskovnik-table {
+  width:100%; border-collapse:collapse; font-size:.42rem;
+}
+.troskovnik-table th,
+.troskovnik-table td {
+  border:1px solid var(--border); padding:2px 4px;
+}
+.troskovnik-table th { background:#1e2a3a; color:var(--accent2); }
+.troskovnik-table tr:hover { background:#1e2a3a55; }
+.iznos-cell { text-align:right; }
+.cena-input {
+  background:var(--input-bg); border:1px solid var(--border);
+  color:#fff; padding:1px 3px; border-radius:2px;
+  font-size:.42rem; width:52px; font-family:inherit;
+}
+.win-open-badge   { color:#4ade80; font-weight:700; }
+.win-closed-badge { color:#6b7a99; }
+.viewer-container { flex:1; display:flex; flex-direction:column; gap:1px; overflow:hidden; }
+.viewer-3d { flex:1; position:relative; cursor:grab; min-height:300px; }
+.viewer-3d:active { cursor:grabbing; }
+.viewer-3d canvas { display:block; width:100% !important; height:100% !important; }
+.viewer-2d {
+  height:170px; position:relative; background:var(--bg);
+  border-top:2px solid var(--border); display:none;
+  align-items:center; justify-content:center;
+}
+.viewer-2d.active { display:flex; }
+.viewer-2d canvas { width:100%; height:100%; object-fit:contain; }
+.viewer-label {
+  position:absolute; top:4px; left:6px;
+  background:rgba(0,0,0,.75); color:#fff;
+  padding:1px 5px; border-radius:2px;
+  font-size:.43rem; z-index:5; pointer-events:none;
+}
+.coords-hud {
+  position:absolute; top:4px; right:6px;
+  background:rgba(0,0,0,.8); color:var(--accent);
+  padding:1px 5px; border-radius:2px;
+  font-size:.43rem; font-weight:700; z-index:5;
+  pointer-events:none; font-family:monospace;
+}
+.sun-indicator {
+  position:absolute; top:22px; right:6px;
+  background:rgba(0,0,0,.8); color:var(--warn);
+  padding:1px 5px; border-radius:2px;
+  font-size:.42rem; z-index:5; pointer-events:none;
+}
+.cube-controls {
+  position:absolute; bottom:28px; right:6px;
+  display:grid; grid-template-columns:repeat(3,22px);
+  grid-template-rows:repeat(4,22px); gap:2px; z-index:5;
+}
+.cube-btn {
+  background:rgba(19,28,42,.85); border:1px solid var(--border);
+  color:var(--text); border-radius:3px; cursor:pointer;
+  font-size:.5rem; display:flex; align-items:center;
+  justify-content:center; transition:all .15s;
+}
+.cube-btn:hover { background:var(--accent); color:#000; border-color:var(--accent); }
+.cube-btn.top    { grid-column:2; grid-row:1; }
+.cube-btn.front  { grid-column:2; grid-row:2; }
+.cube-btn.left   { grid-column:1; grid-row:2; }
+.cube-btn.right  { grid-column:3; grid-row:2; }
+.cube-btn.back   { grid-column:2; grid-row:3; }
+.cube-label { grid-column:1/4; grid-row:4; font-size:.35rem; text-align:center; color:#6b7a99; }
+.hint {
+  position:absolute; bottom:4px; left:6px;
+  font-size:.37rem; color:#6b7a99; pointer-events:none; z-index:5;
+}
+#markerHud {
+  position:absolute; top:40px; right:6px;
+  background:rgba(0,0,0,.75); color:var(--orange);
+  padding:1px 5px; border-radius:2px;
+  font-size:.4rem; z-index:5; pointer-events:none;
+  font-family:monospace; display:none;
+}
+.io-bar {
+  display:flex; gap:3px; flex-wrap:wrap; margin-top:2px;
+}
+details { border:1px solid var(--border); border-radius:4px; padding:3px 5px; }
+details summary {
+  font-size:.47rem; font-weight:700; cursor:pointer;
+  color:var(--accent2); padding:2px 0;
+}
+details[open] summary { color:var(--accent); }
+details > div { padding-top:5px; display:flex; flex-direction:column; gap:3px; }
+.installed-item {
+  background:#1e2a3a; border-radius:3px;
+  padding:3px 5px; margin-bottom:2px; font-size:.42rem;
+}
+.installed-item .item-name { color:var(--accent2); font-weight:700; }
+.installed-item .item-detail { color:#9ca3af; font-size:.38rem; }
+.foil-surface-box {
+  background:linear-gradient(135deg,#0f2218,#0a1a2e);
+  border:1px solid var(--accent);
+  border-radius:4px; padding:6px 8px; margin-top:4px;
+}
+.foil-surface-box .surf-val {
+  font-size:.75rem; font-weight:800; color:var(--accent);
+}
+.foil-surface-box .surf-lbl { font-size:.4rem; color:#9ca3af; }
+.foil-instructions {
+  background:#0a121f; border:1px solid var(--border);
+  border-radius:4px; padding:5px; font-size:.41rem;
+  color:#9ca3af; line-height:1.6; margin-top:4px;
+}
+.foil-instructions strong { color:var(--accent); }
+.foil-instructions ol { padding-left:12px; }
+.foil-instructions li { margin-bottom:2px; }
+#loadingOverlay {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background:rgba(11,15,24,0.92); display:flex;
+  align-items:center; justify-content:center;
+  z-index:100; flex-direction:column; gap:8px;
+}
+#loadingOverlay .spinner {
+  width:36px; height:36px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+#loadingOverlay p { font-size:.6rem; color:var(--accent); }
+@media (max-width:700px) {
+  #panel { width:100% !important; max-width:100%; position:absolute; top:0; left:0; bottom:auto; z-index:50; max-height:55vh; }
+  #panelResizer { display:none; }
+  .viewer-container { margin-top:55vh; height:45vh; }
+}
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <header class="app-header">
+    <h1>🏡 Greenhouse 3D Pro</h1>
+    <div class="project-name-wrap">
+      <span>📁</span>
+      <input type="text" id="projectName" value="My Greenhouse" placeholder="Project name...">
+    </div>
+  </header>
+
+  <div class="io-bar">
+    <button class="btn btn-outline btn-sm" id="saveBtn">💾 Save</button>
+    <button class="btn btn-outline btn-sm" id="exportBtn">📤 Export</button>
+    <button class="btn btn-outline btn-sm" id="importBtn">📥 Import</button>
+    <button class="btn btn-danger btn-sm"  id="clearBtn">🗑 Clear</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+
+  <nav class="layer-tabs" id="layerTabs">
+    <span class="layer-tab active" data-layer="design">📐 Design</span>
+    <span class="layer-tab" data-layer="windows">🪟 Windows</span>
+    <span class="layer-tab" data-layer="foundation">⚓ Found.</span>
+    <span class="layer-tab" data-layer="statics">🔬 Statics</span>
+    <span class="layer-tab" data-layer="wind">💨 Wind</span>
+    <span class="layer-tab" data-layer="build">🔨 Build</span>
+    <span class="layer-tab" data-layer="grow">🌱 Grow</span>
+    <span class="layer-tab" data-layer="life">💧 Life</span>
+    <span class="layer-tab" data-layer="cost">💰 Cost</span>
+  </nav>
+
+  <!-- DESIGN -->
+  <section class="layer-content active" id="layer-design">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Greenhouse type</label>
+        <select id="typeSelect">
+          <option value="arch">Arch-tunnel</option>
+          <option value="asymmetric">Single-slope</option>
+          <option value="gable">Gable roof</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Entrance facing</label>
+        <select id="compassDir">
+          <option value="N">North</option>
+          <option value="S" selected>South</option>
+          <option value="E">East</option>
+          <option value="W">West</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Width X (m)</label>
+        <input type="number" id="widthInput" value="3.2" step="0.1" min="1">
+      </div>
+      <div class="form-group">
+        <label>No. of arches</label>
+        <input type="number" id="numArchesInput" value="7" step="1" min="2">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Arch spacing (m)</label>
+      <input type="number" id="spacingInput" value="1.0" step="0.1" min="0.3">
+      <div style="display:flex;gap:3px;margin-top:2px">
+        <span class="btn btn-sm btn-outline quick-btn" data-spacing="1.0">1m</span>
+        <span class="btn btn-sm btn-outline quick-btn" data-spacing="1.5">1.5m</span>
+        <span class="btn btn-sm btn-outline quick-btn" data-spacing="2.0">2m</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Total length Z (m)</label>
+      <input type="text" id="lengthDisplay" value="6.0" readonly class="readonly-input">
+    </div>
+    <div id="dynamicHeights">
+      <div class="form-group" id="hArch">
+        <label>Arch height Y (m)</label>
+        <input type="number" id="heightArch" value="2.1" step="0.1">
+      </div>
+      <div class="form-group" id="hAsymH" style="display:none">
+        <label>High side Y</label>
+        <input type="number" id="heightAsymHigh" value="2.1" step="0.1">
+      </div>
+      <div class="form-group" id="hAsymL" style="display:none">
+        <label>Low side Y</label>
+        <input type="number" id="heightAsymLow" value="1.5" step="0.1">
+      </div>
+      <div class="form-group" id="hGableW" style="display:none">
+        <label>Wall height Y</label>
+        <input type="number" id="heightGableWall" value="1.6" step="0.1">
+      </div>
+      <div class="form-group" id="hGableR" style="display:none">
+        <label>Roof height Y</label>
+        <input type="number" id="heightGableRoof" value="0.8" step="0.1">
+      </div>
+    </div>
+
+    <details>
+      <summary>🖱 Manual PVC / batten input</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X (click)</label><input type="text" id="clickX" value="0.00" readonly class="readonly-input"></div>
+          <div class="form-group"><label>Y (click)</label><input type="text" id="clickY" value="0.00" readonly class="readonly-input"></div>
+          <div class="form-group"><label>Z (click)</label><input type="text" id="clickZ" value="3.00" readonly class="readonly-input"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Orientation</label>
+            <select id="clickOrient">
+              <option value="horizontal">Horizontal (Z)</option>
+              <option value="vertical">Vertical (Y)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="clickType">
+              <option value="pipe">PVC pipe</option>
+              <option value="lath">Batten</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" id="clickHorizontalRow">
+          <div class="form-group"><label>Z start</label><input type="number" id="clickZstart" value="2.0" step="0.1"></div>
+          <div class="form-group"><label>Z end</label><input type="number" id="clickZend" value="4.0" step="0.1"></div>
+        </div>
+        <div class="form-row" id="clickVerticalRow" style="display:none">
+          <div class="form-group"><label>Y start</label><input type="number" id="clickYstart" value="0.0" step="0.1" min="0"></div>
+          <div class="form-group"><label>Y end</label><input type="number" id="clickYend" value="2.0" step="0.1"></div>
+        </div>
+        <div class="form-group" id="clickLathDimGroup" style="display:none">
+          <label>Batten size</label>
+          <select id="clickLathDim">
+            <option value="3x5">3×5 cm</option>
+            <option value="5x8">5×8 cm</option>
+            <option value="4x6">4×6 cm</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addClickBtn">➕ Add (manual)</button>
+        <div id="clickList" class="custom-elements-list"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔢 Auto PVC / batten</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X ref</label><select id="autoXRef"><option value="left">Left</option><option value="center" selected>Centre</option><option value="right">Right</option></select></div>
+          <div class="form-group"><label>X offset</label><input type="number" id="autoXOff" value="0.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Orientation</label><select id="autoOrient"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></div>
+          <div class="form-group"><label>Type</label><select id="autoType"><option value="pipe">PVC pipe</option><option value="lath">Batten</option></select></div>
+        </div>
+        <div class="form-row" id="autoHorizontalRow">
+          <div class="form-group"><label>Z ref</label><select id="autoZRef"><option value="start">Start</option><option value="middle">Middle</option><option value="end">End</option></select></div>
+          <div class="form-group"><label>Z offset</label><input type="number" id="autoZOff" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Length Z</label><input type="number" id="autoLen" value="3.0" step="0.1" min="0.1"></div>
+        </div>
+        <div class="form-row" id="autoVerticalRow" style="display:none">
+          <div class="form-group"><label>Z position</label><input type="number" id="autoZ" value="3.0" step="0.1"></div>
+          <div class="form-group"><label>Y start</label><input type="number" id="autoYstart" value="0.0" step="0.1" min="0"></div>
+          <div class="form-group"><label>Y end</label><input type="number" id="autoYend" value="2.0" step="0.1"></div>
+        </div>
+        <div class="form-group" id="autoLathDimGroup" style="display:none"><label>Batten size</label><select id="autoLathDim"><option value="3x5">3×5 cm</option><option value="5x8">5×8 cm</option><option value="4x6">4×6 cm</option></select></div>
+        <button class="btn btn-outline btn-sm" id="addAutoBtn">➕ Add (auto)</button>
+        <div id="autoList" class="custom-elements-list"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>🚪 Door</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>Width X</label><input type="number" id="doorW" value="1.0" step="0.1"></div>
+          <div class="form-group"><label>Height Y</label><input type="number" id="doorH" value="2.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>X ref</label><select id="doorXRef"><option value="center" selected>Centre</option><option value="left">Left</option><option value="right">Right</option></select></div>
+          <div class="form-group"><label>X offset</label><input type="number" id="doorXOff" value="0.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Z position</label><input type="number" id="doorZ" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Material</label><select id="doorMat"><option value="pipe">PVC</option><option value="lath">Batten</option></select></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addDoorBtn">➕ Add door</button>
+        <div id="doorList" class="custom-elements-list"></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>🦾 T-support</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X ref</label><select id="tXRef"><option value="center" selected>Centre</option><option value="left">Left</option><option value="right">Right</option></select></div>
+          <div class="form-group"><label>X offset</label><input type="number" id="tXOff" value="0.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Z position</label><input type="number" id="tZ" value="3.0" step="0.1"></div>
+          <div class="form-group"><label>Material</label><select id="tMat"><option value="pipe">PVC</option><option value="lath">Batten</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Height Y</label><input type="number" id="tH" value="2.0" step="0.1"></div>
+          <div class="form-group"><label>Width X</label><input type="number" id="tW" value="0.8" step="0.1"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addTBtn">➕ Add T-support</button>
+        <div id="tList" class="custom-elements-list"></div>
+      </div>
+    </details>
+
+    <div class="form-group">
+      <label>Sun simulation (hour)</label>
+      <input type="range" id="sunSlider" min="0" max="24" value="12" step="0.5" style="width:100%">
+    </div>
+    <div class="toggle-row">
+      <label><input type="checkbox" id="show2D"> Show 2D floor plan</label>
+    </div>
+  </section>
+
+  <!-- WINDOWS -->
+  <section class="layer-content" id="layer-windows">
+    <div class="section-label">🪟 Side windows – PVC arc construction</div>
+    <p style="font-size:.42rem;color:#6b7a99;line-height:1.4">Windows follow the arch curve.</p>
+    <div class="form-row">
+      <div class="form-group"><label>X (from 3D click)</label><input type="text" id="winX" value="1.60" readonly class="readonly-input"></div>
+      <div class="form-group"><label>Side</label><select id="winSide"><option value="left">Left</option><option value="right">Right</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Z start (m)</label><input type="number" id="winZstart" value="1.0" step="0.1"></div>
+      <div class="form-group"><label>Z length (m)</label><input type="number" id="winZlen" value="1.0" step="0.1" min="0.2"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Y1 from floor (m)</label><input type="number" id="winY1" value="0.5" step="0.1" min="0.1"></div>
+      <div class="form-group"><label>Y2 upper (m)</label><input type="number" id="winY2" value="1.5" step="0.1" min="0.2"></div>
+    </div>
+    <div class="form-group">
+      <label>PVC pipe diameter</label>
+      <select id="winPipeSize">
+        <option value="0.020">∅20mm (standard)</option>
+        <option value="0.025">∅25mm (reinforced)</option>
+        <option value="0.032">∅32mm (heavy)</option>
+      </select>
+    </div>
+    <button class="btn btn-accent btn-sm" id="addArcWinBtn">➕ Add arc window</button>
+    <div id="arcWinList" class="custom-elements-list" style="max-height:80px"></div>
+    <div style="height:1px;background:var(--border);margin:4px 0"></div>
+    <div class="section-label">🎭 Window opening animation</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Opening angle (°)</label>
+        <input type="range" id="winOpenAngle" min="0" max="90" value="0" step="5" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label style="color:var(--accent)" id="winAngleLabel">0° (closed)</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline" id="winClose">🔒 Close</button>
+      <button class="btn btn-sm btn-accent"  id="winHalf">↕ Half</button>
+      <button class="btn btn-sm btn-orange"  id="winFull">🌬 Full open</button>
+      <button class="btn btn-sm btn-blue"    id="winToggleBtn">🔄 Toggle all</button>
+    </div>
+    <div id="winStatusInfo" style="font-size:.41rem;color:#9ca3af;margin-top:2px"></div>
+  </section>
+
+  <!-- FOUNDATION -->
+  <section class="layer-content" id="layer-foundation">
+    <div class="section-label">⚓ PVC pipe foundation type</div>
+    <p style="font-size:.42rem;color:#9ca3af;line-height:1.4">The installation method directly affects structural load capacity.</p>
+    <div class="form-group">
+      <label>Installation method</label>
+      <select id="foundationType" style="font-size:.6rem">
+        <option value="buried">🌍 Buried in ground (30–60 cm)</option>
+        <option value="driven">🔨 Driven into ground (40–80 cm)</option>
+        <option value="sleeved">🔗 Rods + PVC sleeves (reinforced)</option>
+        <option value="concrete">🧱 Concrete anchor</option>
+      </select>
+    </div>
+    <div id="foundationDetails" style="margin-top:4px"></div>
+    <div class="form-group" style="margin-top:4px">
+      <label>Installation depth (cm)</label>
+      <input type="number" id="foundDepth" value="50" step="5" min="20" max="150">
+    </div>
+    <div class="form-group">
+      <label>Soil type</label>
+      <select id="soilType">
+        <option value="soft">Soft (clay, silt) – poor</option>
+        <option value="medium" selected>Medium (loam) – standard</option>
+        <option value="hard">Hard (gravel, sand) – good</option>
+        <option value="rock">Rock – excellent</option>
+      </select>
+    </div>
+    <div id="foundationResult" class="calc-panel" style="margin-top:4px;font-size:.46rem"></div>
+  </section>
+
+  <!-- STATICS -->
+  <section class="layer-content" id="layer-statics">
+    <div class="section-label">🔬 Static structural calculation</div>
+    <p style="font-size:.42rem;color:#9ca3af;line-height:1.4">Load capacity of PVC structure based on dimensions, loads and pipe type.</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Arch PVC pipe diameter</label>
+        <select id="pvcDiam">
+          <option value="25">∅25mm – wall 1.5mm</option>
+          <option value="32" selected>∅32mm – wall 2.0mm</option>
+          <option value="40">∅40mm – wall 2.5mm</option>
+          <option value="50">∅50mm – wall 3.0mm</option>
+          <option value="63">∅63mm – wall 3.5mm</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Snow (kg/m²)</label><input type="number" id="snowLoad" value="40" step="5" min="0" max="300"></div>
+      <div class="form-group"><label>Wind (km/h)</label><input type="number" id="calcWindSpeed" value="80" step="5" min="0" max="250"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Foil weight (g/m²)</label>
+        <select id="foilWeight">
+          <option value="100">100 g/m² – thin</option>
+          <option value="150" selected>150 g/m² – standard</option>
+          <option value="200">200 g/m² – reinforced</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-purple" style="width:100%" id="calcBtn">🔬 Calculate load capacity</button>
+    <div id="calcResults" class="calc-panel" style="margin-top:6px;display:none">
+      <div class="calc-result" id="calcResultGrid"></div>
+      <div id="calcVerdict" style="margin-top:6px;padding:6px;border-radius:4px;font-size:.48rem;border:1px solid var(--border)"></div>
+    </div>
+  </section>
+
+  <!-- WIND -->
+  <section class="layer-content" id="layer-wind">
+    <div class="section-label">💨 Wind load simulation</div>
+    <p style="font-size:.42rem;color:#9ca3af;line-height:1.4">Analysis of wind loads on the greenhouse structure.</p>
+    <div class="form-row">
+      <div class="form-group"><label>Wind speed (km/h)</label><input type="number" id="windSpeed" value="80" step="5" min="10" max="280"></div>
+      <div class="form-group">
+        <label>Direction</label>
+        <select id="windDir">
+          <option value="front">Frontal (S→N)</option>
+          <option value="side">Lateral (W→E)</option>
+          <option value="diagonal">Diagonal 45°</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Load zone</label>
+      <select id="windZone">
+        <option value="1">Zone 1 – low (max 90 km/h)</option>
+        <option value="2" selected>Zone 2 – medium (max 130 km/h)</option>
+        <option value="3">Zone 3 – high (max 160 km/h)</option>
+        <option value="4">Zone 4 – coastal (max 200 km/h)</option>
+      </select>
+    </div>
+    <button class="btn btn-blue" style="width:100%" id="windCalcBtn">💨 Simulate wind</button>
+    <div id="windResults" style="margin-top:6px;display:none">
+      <div id="windBars" style="display:flex;flex-direction:column;gap:4px"></div>
+      <div id="windVerdict" style="margin-top:6px;padding:6px;border-radius:4px;font-size:.46rem;border:1px solid var(--border)"></div>
+      <div id="windSpacer" style="margin-top:4px;padding:4px;background:#111a28;border-radius:4px;font-size:.43rem;border:1px solid var(--border)"></div>
+    </div>
+  </section>
+
+  <!-- BUILD -->
+  <section class="layer-content" id="layer-build">
+    <div class="section-label">🔨 Battens / Build elements</div>
+    <div class="form-row">
+      <div class="form-group"><label>X (m)</label><input type="number" id="lathX" value="0.0" step="0.1"></div>
+      <div class="form-group"><label>Z (m)</label><input type="number" id="lathZ" value="0.0" step="0.1"></div>
+      <div class="form-group">
+        <label>Orientation</label>
+        <select id="lathOrient"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select>
+      </div>
+    </div>
+    <div class="form-row" id="lathHorizontalRow">
+      <div class="form-group"><label>Y height</label><input type="number" id="lathY" value="1.0" step="0.1"></div>
+      <div class="form-group"><label>Z start</label><input type="number" id="lathZstart" value="0.0" step="0.1"></div>
+      <div class="form-group"><label>Z end</label><input type="number" id="lathZend" value="2.0" step="0.1"></div>
+    </div>
+    <div class="form-row" id="lathVerticalRow" style="display:none">
+      <div class="form-group"><label>Y1 start</label><input type="number" id="lathY1" value="0.0" step="0.1"></div>
+      <div class="form-group"><label>Y2 end</label><input type="number" id="lathY2" value="2.0" step="0.1"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Material</label><select id="lathMatType"><option value="wood">Wood</option><option value="pvc">PVC</option></select></div>
+      <div class="form-group"><label>Size</label><select id="lathDim"><option value="3x5">3×5 cm</option><option value="5x8">5×8 cm</option><option value="4x6">4×6 cm</option></select></div>
+    </div>
+    <button class="btn btn-outline btn-sm" id="addLathBtn">➕ Add batten</button>
+    <div id="lathList" class="custom-elements-list"></div>
+  </section>
+
+  <!-- GROW -->
+  <section class="layer-content" id="layer-grow">
+    <div class="section-label">🌱 Plant placement</div>
+    <div class="form-row">
+      <div class="form-group"><label>Species</label><select id="plantType"><option value="tomato">Tomato</option><option value="pepper">Pepper</option><option value="cucumber">Cucumber</option></select></div>
+      <div class="form-group"><label>Height Y</label><input type="number" id="plantHeight" value="1.2" step="0.1" min="0.1"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>X (m)</label><input type="number" id="plantX" value="0.0" step="0.1"></div>
+      <div class="form-group"><label>Z (m)</label><input type="number" id="plantZ" value="3.0" step="0.1"></div>
+    </div>
+    <div class="form-group"><label>Planting</label><select id="plantMode"><option value="ground">Ground</option><option value="bottle">Bottle 13×10</option></select></div>
+    <div class="form-group" id="bottleMountGroup" style="display:none"><label>Mount</label><select id="bottleMount"><option value="floor">On floor</option><option value="hang">Hanging</option></select></div>
+    <div class="form-group" id="hangTargetGroup" style="display:none"><label>Coords X,Y,Z</label><input type="text" id="hangTarget" value="0,1.5,3"></div>
+    <button class="btn btn-outline btn-sm" id="addPlantBtn">➕ Add plant</button>
+    <div id="plantList" class="custom-elements-list"></div>
+  </section>
+
+  <!-- LIFE -->
+  <section class="layer-content" id="layer-life">
+    <div class="section-label">🧊 Nylon Cover</div>
+    <div class="toggle-row" style="margin-bottom:4px">
+      <label><input type="checkbox" id="showNylon"> Show nylon cover (transparent film)</label>
+    </div>
+    <div id="nylonPanel" style="display:none">
+      <div class="foil-surface-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div><div class="surf-val" id="nylonSurfArea">–</div><div class="surf-lbl">Total cover surface (m²)</div></div>
+          <div><div class="surf-val" id="nylonFoilNeeded" style="color:var(--orange)">–</div><div class="surf-lbl">Nylon needed +15% overlap (m²)</div></div>
+          <div><div class="surf-val" id="nylonUsable" style="color:var(--accent2)">–</div><div class="surf-lbl">Usable interior area (m²)</div></div>
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:5px">📦 Installed components</div>
+      <div id="installedItemsList" style="max-height:120px;overflow-y:auto">
+        <p style="font-size:.42rem;color:#6b7a99">No extra components installed yet.</p>
+      </div>
+      <div class="foil-instructions" id="nylonInstructions">
+        <strong>📋 How to install nylon on your greenhouse:</strong>
+        <ol id="nylonInstructionsList"></ol>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">💧 Life Systems</div>
+    <details>
+      <summary>🛢 Barrel</summary>
+      <div>
+        <div class="form-group"><label>Size</label><select id="barrelSize"><option value="1000">1000L (1m³)</option><option value="100">100L drum</option></select></div>
+        <div class="form-row">
+          <div class="form-group"><label>X</label><input type="number" id="barrelX" value="1.5" step="0.1"></div>
+          <div class="form-group"><label>Z</label><input type="number" id="barrelZ" value="0.5" step="0.1"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addBarrelBtn">➕ Add barrel</button>
+        <div id="barrelList" class="custom-elements-list"></div>
+      </div>
+    </details>
+    <details>
+      <summary>💧 Hose</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X</label><input type="number" id="hoseX" value="0.5" step="0.1"></div>
+          <div class="form-group"><label>Y</label><input type="number" id="hoseY" value="0.1" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Z start</label><input type="number" id="hoseZstart" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Z end</label><input type="number" id="hoseZend" value="6.0" step="0.1"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addHoseBtn">➕ Add hose</button>
+        <div id="hoseList" class="custom-elements-list"></div>
+      </div>
+    </details>
+    <details>
+      <summary>🔌 Connector</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X</label><input type="number" id="connX" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Y</label><input type="number" id="connY" value="0.5" step="0.1"></div>
+          <div class="form-group"><label>Z</label><input type="number" id="connZ" value="3.0" step="0.1"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addConnBtn">➕ Add connector</button>
+        <div id="connList" class="custom-elements-list"></div>
+      </div>
+    </details>
+    <details>
+      <summary>⚡ Electric wire</summary>
+      <div>
+        <div class="form-row">
+          <div class="form-group"><label>X</label><input type="number" id="elecX" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Y</label><input type="number" id="elecY" value="2.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Z start</label><input type="number" id="elecZstart" value="0.0" step="0.1"></div>
+          <div class="form-group"><label>Z end</label><input type="number" id="elecZend" value="6.0" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Wire 1</label><input type="color" id="wireColor1" value="#ff0000"></div>
+          <div class="form-group"><label>Wire 2</label><input type="color" id="wireColor2" value="#0000ff"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" id="addElecBtn">➕ Add wire</button>
+        <div id="elecList" class="custom-elements-list"></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- COST -->
+  <section class="layer-content" id="layer-cost">
+    <div class="section-label">💰 Project cost estimate</div>
+    <div id="troskovnikContent"></div>
+    <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-orange" id="updateBtn" style="flex:1">🔄 Refresh</button>
+      <button class="btn btn-accent" id="pdfBtn" style="flex:2">📄 Export PDF</button>
+    </div>
+  </section>
+</aside>
+
+<div id="panelResizer"></div>
+
+<main class="viewer-container">
+  <div class="viewer-3d" id="viewer3d">
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <p>Loading 3D engine...</p>
+    </div>
+    <div class="viewer-label">🎥 3D View – <span id="projectLabel">My Greenhouse</span></div>
+    <div class="coords-hud" id="coordsHud">📍 X:0.00 Y:0.00 Z:0.00</div>
+    <div class="sun-indicator" id="sunIndicator">☀️ 12:00</div>
+    <div id="markerHud">✛ last click</div>
+    <nav class="cube-controls">
+      <button class="cube-btn top"   onclick="AppCtrl.setView('top')">⬆</button>
+      <button class="cube-btn front" onclick="AppCtrl.setView('front')">▲</button>
+      <button class="cube-btn right" onclick="AppCtrl.setView('right')">►</button>
+      <button class="cube-btn left"  onclick="AppCtrl.setView('left')">◄</button>
+      <button class="cube-btn back"  onclick="AppCtrl.setView('back')">▼</button>
+      <div class="cube-label">VIEW CUBE</div>
+    </nav>
+    <div class="hint">🖱 Rotate | Scroll=Zoom | Click=Coords | [R]=Reset | [T]=Top | [G]=Grid</div>
+  </div>
+  <div class="viewer-2d" id="viewer2d">
+    <div class="viewer-label">📐 2D Floor Plan</div>
+    <canvas id="canvas2d"></canvas>
+  </div>
+</main>
+
+<div id="report-container" style="position:absolute;left:-9999px;top:0;width:800px;background:#fff"></div>
+
+<script>
+// ─── Wait for Three.js to load via dynamic import ───
+(async function() {
+
+const THREE = await import('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js');
+
+// OrbitControls inline (no external import needed – avoids CDN mismatch)
+// Minimal OrbitControls implementation compatible with r128
+class OrbitControls {
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.domElement = domElement;
+    this.target = new THREE.Vector3();
+    this.enableDamping = true;
+    this.dampingFactor = 0.08;
+    this.minDistance = 2;
+    this.maxDistance = 30;
+    this._spherical = new THREE.Spherical();
+    this._sphericalDelta = new THREE.Spherical();
+    this._scale = 1;
+    this._panOffset = new THREE.Vector3();
+    this._rotateStart = new THREE.Vector2();
+    this._rotateEnd = new THREE.Vector2();
+    this._rotateDelta = new THREE.Vector2();
+    this._isPointerDown = false;
+    this._lastButton = -1;
+    this._panStart = new THREE.Vector2();
+    this._panEnd = new THREE.Vector2();
+    this._panDelta = new THREE.Vector2();
+    this._rotateSpeed = 1.0;
+    this._panSpeed = 0.5;
+    this._zoomSpeed = 1.2;
+    this._enabled = true;
+    this._offset = new THREE.Vector3();
+    this._quat = new THREE.Quaternion().setFromUnitVectors(camera.up, new THREE.Vector3(0,1,0));
+    this._quatInverse = this._quat.clone().invert();
+    this._lastPos = new THREE.Vector3();
+    this._domRect = null;
+    this._bindEvents();
+  }
+  _bindEvents() {
+    const el = this.domElement;
+    el.addEventListener('contextmenu', e => e.preventDefault());
+    el.addEventListener('pointerdown', e => this._onPointerDown(e));
+    el.addEventListener('pointermove', e => this._onPointerMove(e));
+    el.addEventListener('pointerup', () => { this._isPointerDown = false; });
+    el.addEventListener('wheel', e => this._onWheel(e), { passive: false });
+  }
+  _getRect() { return this.domElement.getBoundingClientRect(); }
+  _onPointerDown(e) {
+    this._isPointerDown = true;
+    this._lastButton = e.button;
+    if (e.button === 0) {
+      this._rotateStart.set(e.clientX, e.clientY);
+    } else if (e.button === 2) {
+      this._panStart.set(e.clientX, e.clientY);
+    }
+  }
+  _onPointerMove(e) {
+    if (!this._isPointerDown) return;
+    if (this._lastButton === 0) {
+      this._rotateEnd.set(e.clientX, e.clientY);
+      this._rotateDelta.subVectors(this._rotateEnd, this._rotateStart).multiplyScalar(this._rotateSpeed);
+      const rect = this._getRect();
+      this._sphericalDelta.theta -= 2 * Math.PI * this._rotateDelta.x / rect.width;
+      this._sphericalDelta.phi -= 2 * Math.PI * this._rotateDelta.y / rect.height;
+      this._rotateStart.copy(this._rotateEnd);
+    } else if (this._lastButton === 2) {
+      this._panEnd.set(e.clientX, e.clientY);
+      this._panDelta.subVectors(this._panEnd, this._panStart).multiplyScalar(this._panSpeed);
+      this._pan(this._panDelta.x, this._panDelta.y);
+      this._panStart.copy(this._panEnd);
+    }
+  }
+  _pan(deltaX, deltaY) {
+    const rect = this._getRect();
+    const dist = this.camera.position.distanceTo(this.target);
+    const fov = this.camera.fov * Math.PI / 180;
+    const targetH = 2 * Math.tan(fov / 2) * dist;
+    const targetW = targetH * this.camera.aspect;
+    const panX = -(deltaX / rect.width) * targetW;
+    const panY = (deltaY / rect.height) * targetH;
+    const v = new THREE.Vector3();
+    const right = new THREE.Vector3();
+    right.setFromMatrixColumn(this.camera.matrix, 0);
+    v.copy(right).multiplyScalar(panX);
+    const up = new THREE.Vector3();
+    up.setFromMatrixColumn(this.camera.matrix, 1);
+    v.addScaledVector(up, panY);
+    this._panOffset.add(v);
+  }
+  _onWheel(e) {
+    e.preventDefault();
+    if (e.deltaY < 0) this._scale /= this._zoomSpeed;
+    else this._scale *= this._zoomSpeed;
+  }
+  update() {
+    const offset = this._offset;
+    const position = this.camera.position;
+    offset.copy(position).sub(this.target);
+    offset.applyQuaternion(this._quat);
+    this._spherical.setFromVector3(offset);
+    if (this.enableDamping) {
+      this._spherical.theta += this._sphericalDelta.theta * this.dampingFactor;
+      this._spherical.phi   += this._sphericalDelta.phi   * this.dampingFactor;
+    } else {
+      this._spherical.theta += this._sphericalDelta.theta;
+      this._spherical.phi   += this._sphericalDelta.phi;
+    }
+    this._spherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, this._spherical.phi));
+    this._spherical.radius *= this._scale;
+    this._spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this._spherical.radius));
+    this.target.add(this._panOffset);
+    offset.setFromSpherical(this._spherical);
+    offset.applyQuaternion(this._quatInverse);
+    position.copy(this.target).add(offset);
+    this.camera.lookAt(this.target);
+    if (this.enableDamping) {
+      this._sphericalDelta.theta *= (1 - this.dampingFactor);
+      this._sphericalDelta.phi   *= (1 - this.dampingFactor);
+    } else {
+      this._sphericalDelta.set(0, 0, 0);
+    }
+    this._scale = 1;
+    this._panOffset.set(0, 0, 0);
+  }
+}
+
+// ─── UTILS ───
+const $ = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// ─── STATE ───
+const State = {
+  clickElements: [], autoElements: [], doorFrames: [], tSupports: [],
+  arcWindows: [], laths: [], plants: [], barrels: [], hoses: [],
+  connectors: [], elecWires: [],
+  windowOpenAngle: 0,
+  currentLayer: 'design',
+  lastClickPoint: { x:0, y:1.5, z:3 },
+  allWindowsOpen: false,
+  showNylon: false,
+  markerPos: null,
+
+  toJSON() {
+    return {
+      projectName: $('projectName').value,
+      typeSelect: $('typeSelect').value,
+      widthInput: $('widthInput').value,
+      numArchesInput: $('numArchesInput').value,
+      spacingInput: $('spacingInput').value,
+      heightArch: $('heightArch').value,
+      heightAsymHigh: $('heightAsymHigh').value,
+      heightAsymLow: $('heightAsymLow').value,
+      heightGableWall: $('heightGableWall').value,
+      heightGableRoof: $('heightGableRoof').value,
+      clickElements: this.clickElements, autoElements: this.autoElements,
+      doorFrames: this.doorFrames, tSupports: this.tSupports,
+      arcWindows: this.arcWindows, laths: this.laths, plants: this.plants,
+      barrels: this.barrels, hoses: this.hoses, connectors: this.connectors,
+      elecWires: this.elecWires, windowOpenAngle: this.windowOpenAngle,
+      showNylon: this.showNylon,
+    };
+  },
+  fromJSON(obj) {
+    if (!obj) return;
+    const sv = (id, v) => { const el=$(id); if (el && v!==undefined) el.value=v; };
+    sv('projectName',obj.projectName); sv('typeSelect',obj.typeSelect);
+    sv('widthInput',obj.widthInput); sv('numArchesInput',obj.numArchesInput);
+    sv('spacingInput',obj.spacingInput); sv('heightArch',obj.heightArch);
+    sv('heightAsymHigh',obj.heightAsymHigh); sv('heightAsymLow',obj.heightAsymLow);
+    sv('heightGableWall',obj.heightGableWall); sv('heightGableRoof',obj.heightGableRoof);
+    this.clickElements=obj.clickElements||[]; this.autoElements=obj.autoElements||[];
+    this.doorFrames=obj.doorFrames||[]; this.tSupports=obj.tSupports||[];
+    this.arcWindows=obj.arcWindows||[]; this.laths=obj.laths||[];
+    this.plants=obj.plants||[]; this.barrels=obj.barrels||[];
+    this.hoses=obj.hoses||[]; this.connectors=obj.connectors||[];
+    this.elecWires=obj.elecWires||[];
+    this.windowOpenAngle=obj.windowOpenAngle||0;
+    this.showNylon=obj.showNylon||false;
+    $('showNylon').checked=this.showNylon;
+    $('nylonPanel').style.display=this.showNylon?'block':'none';
+    $('winOpenAngle').value=this.windowOpenAngle;
+  }
+};
+
+// ─── ENGINE ───
+const viewer3d = $('viewer3d');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0b0f18');
+scene.fog = new THREE.Fog('#0b0f18', 30, 60);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+camera.position.set(8, 5, -3);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(window.devicePixelRatio);
+viewer3d.appendChild(renderer.domElement);
+
+function resizeRenderer() {
+  const w = viewer3d.clientWidth, h = viewer3d.clientHeight;
+  if (w > 0 && h > 0) {
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+}
+resizeRenderer();
+window.addEventListener('resize', resizeRenderer);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1, 3);
+controls.minDistance = 1;
+controls.maxDistance = 40;
+
+// Lights
+const ambient = new THREE.AmbientLight('#b8d4ff', 1.2);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight('#fffef5', 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 60;
+sun.shadow.camera.left = -15; sun.shadow.camera.right = 15;
+sun.shadow.camera.top = 15; sun.shadow.camera.bottom = -2;
+scene.add(sun);
+const sunSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(0.3, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffff00 })
+);
+scene.add(sunSphere);
+scene.add(new THREE.HemisphereLight('#87ceeb', '#3d2b1f', 0.8));
+
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.MeshStandardMaterial({ color: '#3d3226', roughness: 0.9 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.05;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grid helper
+const gridHelper = new THREE.GridHelper(20, 20, '#2d3a50', '#2d3a50');
+scene.add(gridHelper);
+
+const modelGroup = new THREE.Group();
+scene.add(modelGroup);
+const markerGroup = new THREE.Group();
+scene.add(markerGroup);
+
+// Materials
+const MAT = {
+  foilClosed: new THREE.MeshPhysicalMaterial({ color: '#c8e6c9', roughness: 0.25, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false }),
+  foilNylon:  new THREE.MeshPhysicalMaterial({ color: '#e0f0ff', roughness: 0.15, metalness: 0.05, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false }),
+  frame:      new THREE.MeshStandardMaterial({ color: '#e0e0e0', roughness: 0.35, metalness: 0.7 }),
+  frameDark:  new THREE.MeshStandardMaterial({ color: '#b0b0b0', roughness: 0.3, metalness: 0.8 }),
+  pipe:       new THREE.MeshStandardMaterial({ color: '#d0d0d0', roughness: 0.4, metalness: 0.6 }),
+  lath:       new THREE.MeshStandardMaterial({ color: '#8B5A2B', roughness: 0.7 }),
+  wood:       new THREE.MeshStandardMaterial({ color: '#A0522D', roughness: 0.65 }),
+  pvc2:       new THREE.MeshStandardMaterial({ color: '#c0c0c0', roughness: 0.3, metalness: 0.5 }),
+  hose:       new THREE.MeshStandardMaterial({ color: '#111', roughness: 0.7 }),
+  barrel:     new THREE.MeshStandardMaterial({ color: '#2c5f8a', roughness: 0.4, metalness: 0.3 }),
+  winClosed:  new THREE.MeshPhysicalMaterial({ color: '#87CEEB', roughness: 0.2, transparent: true, opacity: 0.55 }),
+  winOpen:    new THREE.MeshPhysicalMaterial({ color: '#a8d8f0', roughness: 0.15, transparent: true, opacity: 0.35 }),
+};
+
+function getLathGeom(dimStr) {
+  const [a, b] = (dimStr||'3x5').split('x').map(Number);
+  return { w: a/100, h: b/100 };
+}
+
+function updateSunPosition(hour) {
+  const angle = (hour - 6) / 12 * Math.PI;
+  const r = 12;
+  const x = Math.cos(angle)*r, y = Math.sin(angle)*r;
+  sun.position.set(x, Math.max(0.5, y), 5);
+  sunSphere.position.set(x, Math.max(0.5, y), 5);
+  sun.intensity = y > 0 ? 4 : 1;
+  ambient.intensity = y > 0 ? 1.2 : 0.6;
+  const h = Math.floor(hour), m = Math.round((hour-h)*60);
+  $('sunIndicator').textContent = `☀️ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function getArchShape(w, h) {
+  const R = (w*w + 4*h*h)/(8*h);
+  const d = h - R;
+  const shape = new THREE.Shape();
+  shape.moveTo(-w/2, 0);
+  const sa = Math.atan2(0-d, -w/2), ea = Math.atan2(0-d, w/2);
+  shape.absarc(0, d, R, sa, ea, h <= w/2 ? false : true);
+  shape.lineTo(-w/2, 0);
+  return shape;
+}
+
+function getArcLength(w, h) {
+  const R = (w*w + 4*h*h)/(8*h);
+  const d = h - R;
+  const sa = Math.atan2(0-d, -w/2), ea = Math.atan2(0-d, w/2);
+  let th = Math.abs(ea - sa);
+  if ((h > w/2 && th < Math.PI)||(h <= w/2 && th > Math.PI)) th = 2*Math.PI - th;
+  return R * th;
+}
+
+function getArchArea(w, h) {
+  const R = (w*w + 4*h*h)/(8*h);
+  const d = h - R;
+  const sa = Math.atan2(0-d, -w/2), ea = Math.atan2(0-d, w/2);
+  let th = Math.abs(ea - sa);
+  if ((h > w/2 && th < Math.PI)||(h <= w/2 && th > Math.PI)) th = 2*Math.PI - th;
+  const sec = (R*R*th)/2, tri = (w/2)*Math.abs(d);
+  if (h >= R) return Math.PI*R*R - (sec-tri);
+  return sec - tri;
+}
+
+function placeMarker(x, y, z) {
+  markerGroup.clear();
+  const size = 0.18, thick = 0.012;
+  const matM = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+  const hx = new THREE.Mesh(new THREE.BoxGeometry(size, thick, thick), matM);
+  hx.position.set(x, y+0.01, z); markerGroup.add(hx);
+  const hz = new THREE.Mesh(new THREE.BoxGeometry(thick, thick, size), matM);
+  hz.position.set(x, y+0.01, z); markerGroup.add(hz);
+  const vy = new THREE.Mesh(new THREE.BoxGeometry(thick, size, thick), matM);
+  vy.position.set(x, y+size/2, z); markerGroup.add(vy);
+}
+
+function buildScene(dims, state, nylonOn) {
+  modelGroup.clear();
+  const { type, w, L, spacing, nArches } = dims;
+  const foilMat = nylonOn ? MAT.foilNylon : MAT.foilClosed;
+
+  if (type === 'arch') {
+    const h = dims.h;
+    const geom = new THREE.ExtrudeGeometry(getArchShape(w, h), { steps:1, depth:L, bevelEnabled:false });
+    modelGroup.add(new THREE.Mesh(geom, foilMat));
+    const R = (w*w+4*h*h)/(8*h), d2 = h-R;
+    const sa = Math.atan2(0-d2, -w/2), ea = Math.atan2(0-d2, w/2);
+    let ta = Math.abs(ea-sa);
+    if ((h>w/2&&ta<Math.PI)||(h<=w/2&&ta>Math.PI)) ta = 2*Math.PI-ta;
+    const dir = h > w/2 ? -1 : 1;
+    const pts = [];
+    for (let i=0; i<=80; i++) {
+      const ang = sa + dir*ta*(i/80);
+      pts.push(new THREE.Vector3(Math.cos(ang)*R, Math.sin(ang)*R+d2, 0));
+    }
+    for (let i=0; i<nArches; i++) {
+      const archPts = pts.map(p => new THREE.Vector3(p.x, p.y, i*spacing));
+      const curve = new THREE.CatmullRomCurve3(archPts);
+      const tube = new THREE.TubeGeometry(curve, 64, 0.025, 8, false);
+      modelGroup.add(new THREE.Mesh(tube, MAT.frame));
+    }
+    const bG = new THREE.CylinderGeometry(0.025, 0.025, L, 8);
+    const bl = new THREE.Mesh(bG, MAT.frameDark);
+    bl.rotation.x = Math.PI/2; bl.position.set(-w/2, 0.01, L/2); modelGroup.add(bl);
+    const br = new THREE.Mesh(bG, MAT.frameDark);
+    br.rotation.x = Math.PI/2; br.position.set(w/2, 0.01, L/2); modelGroup.add(br);
+
+  } else if (type === 'asymmetric') {
+    const { h1, h2 } = dims;
+    const shape = new THREE.Shape();
+    shape.moveTo(-w/2,0); shape.lineTo(w/2,0); shape.lineTo(w/2,h2); shape.lineTo(-w/2,h1); shape.closePath();
+    modelGroup.add(new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { steps:1, depth:L, bevelEnabled:false }), foilMat));
+    for (let i=0; i<nArches; i++) {
+      const z = i*spacing;
+      const ps = [new THREE.Vector3(-w/2,0,z),new THREE.Vector3(w/2,0,z),new THREE.Vector3(w/2,h2,z),new THREE.Vector3(-w/2,h1,z),new THREE.Vector3(-w/2,0,z)];
+      modelGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ps), 32, 0.025, 8, false), MAT.frame));
+    }
+
+  } else if (type === 'gable') {
+    const { hWall, hRoof } = dims;
+    const shape = new THREE.Shape();
+    shape.moveTo(-w/2,0); shape.lineTo(w/2,0); shape.lineTo(w/2,hWall); shape.lineTo(0,hWall+hRoof); shape.lineTo(-w/2,hWall); shape.closePath();
+    modelGroup.add(new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { steps:1, depth:L, bevelEnabled:false }), foilMat));
+    for (let i=0; i<nArches; i++) {
+      const z = i*spacing;
+      const ps = [new THREE.Vector3(-w/2,0,z),new THREE.Vector3(w/2,0,z),new THREE.Vector3(w/2,hWall,z),new THREE.Vector3(0,hWall+hRoof,z),new THREE.Vector3(-w/2,hWall,z),new THREE.Vector3(-w/2,0,z)];
+      modelGroup.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ps), 32, 0.025, 8, false), MAT.frame));
+    }
+  }
+
+  // Custom elements
+  ;[...state.clickElements, ...state.autoElements].forEach(e => {
+    const mat = e.type==='pipe' ? MAT.pipe : MAT.lath;
+    const dim = e.lathDim ? getLathGeom(e.lathDim) : { w:0.03, h:0.05 };
+    if (e.orient==='horizontal') {
+      const len = Math.abs(e.zend-e.zstart), zC = (e.zstart+e.zend)/2;
+      if (e.type==='pipe') {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,len,8), mat);
+        c.rotation.x = Math.PI/2; c.position.set(e.x,e.y,zC); modelGroup.add(c);
+      } else {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(dim.w,dim.h,len), mat);
+        b.position.set(e.x,e.y,zC); modelGroup.add(b);
+      }
+    } else {
+      const len = Math.abs(e.yend-e.ystart), yC = (e.ystart+e.yend)/2;
+      if (e.type==='pipe') {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,len,8), mat);
+        c.position.set(e.x,yC,e.z); modelGroup.add(c);
+      } else {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(dim.w,len,dim.h), mat);
+        b.position.set(e.x,yC,e.z); modelGroup.add(b);
+      }
+    }
+  });
+
+  // Doors
+  state.doorFrames.forEach(d => {
+    const mat = d.mat==='pipe' ? MAT.pipe : MAT.lath;
+    const R = 0.02;
+    const lv = new THREE.Mesh(new THREE.CylinderGeometry(R,R,d.h,8), mat);
+    lv.position.set(d.x-d.w/2, d.h/2, d.z); modelGroup.add(lv);
+    const rv = new THREE.Mesh(new THREE.CylinderGeometry(R,R,d.h,8), mat);
+    rv.position.set(d.x+d.w/2, d.h/2, d.z); modelGroup.add(rv);
+    const th = new THREE.Mesh(new THREE.CylinderGeometry(R,R,d.w,8), mat);
+    th.rotation.z = Math.PI/2; th.position.set(d.x, d.h, d.z); modelGroup.add(th);
+  });
+
+  // T-supports
+  state.tSupports.forEach(t => {
+    const mat = t.mat==='pipe' ? MAT.pipe : MAT.lath;
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,t.height,8), mat);
+    p.position.set(t.x, t.height/2, t.z); modelGroup.add(p);
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,t.width,8), mat);
+    c.rotation.z = Math.PI/2; c.position.set(t.x, t.height, t.z); modelGroup.add(c);
+  });
+
+  // Plants
+  state.plants.forEach(p => {
+    const sH = p.height*0.7;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.02,sH,8), new THREE.MeshStandardMaterial({ color:'#2d5a27' }));
+    stem.position.set(p.x, sH/2, p.z); modelGroup.add(stem);
+    const lc = p.type==='tomato'?'#d32f2f':p.type==='pepper'?'#f57c00':'#388e3c';
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.15,8,6), new THREE.MeshStandardMaterial({ color:lc }));
+    leaf.position.set(p.x, sH+0.1, p.z); modelGroup.add(leaf);
+  });
+
+  // Barrels
+  state.barrels.forEach(b => {
+    if (b.size===1000) {
+      const box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), MAT.barrel);
+      box.position.set(b.x,.5,b.z); modelGroup.add(box);
+    } else {
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,1,16), MAT.barrel);
+      cyl.position.set(b.x,.5,b.z); modelGroup.add(cyl);
+    }
+  });
+
+  // Hoses
+  state.hoses.forEach(h => {
+    const len = Math.abs(h.zend-h.zstart), zC = (h.zstart+h.zend)/2;
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,len,8), MAT.hose);
+    c.rotation.x = Math.PI/2; c.position.set(h.x,h.y,zC); modelGroup.add(c);
+  });
+
+  // Connectors
+  state.connectors.forEach(c => {
+    const conn = new THREE.Mesh(new THREE.SphereGeometry(.04,8,8), new THREE.MeshStandardMaterial({ color:'#ffaa00', roughness:.2, metalness:.8 }));
+    conn.position.set(c.x,c.y,c.z); modelGroup.add(conn);
+  });
+
+  // Electric wires
+  state.elecWires.forEach(ew => {
+    const len = Math.abs(ew.zend-ew.zstart), zC = (ew.zstart+ew.zend)/2;
+    [ew.color1, ew.color2].forEach((color, idx) => {
+      const mat = new THREE.MeshStandardMaterial({ color, roughness:.3 });
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,len,6), mat);
+      c.rotation.x = Math.PI/2; c.position.set(ew.x+(idx===0?-0.02:0.02), ew.y, zC); modelGroup.add(c);
+    });
+  });
+
+  // Battens
+  state.laths.forEach(l => {
+    const mat = l.mat==='wood' ? MAT.wood : MAT.pvc2;
+    const dim = getLathGeom(l.lathDim||'3x5');
+    if (l.orient==='horizontal') {
+      const len = Math.abs(l.zend-l.zstart), zC = (l.zstart+l.zend)/2;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(dim.w,dim.h,len), mat);
+      box.position.set(l.x,l.y,zC); modelGroup.add(box);
+    } else {
+      const len = Math.abs(l.y2-l.y1), yC = (l.y1+l.y2)/2;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(dim.w,len,dim.h), mat);
+      box.position.set(l.x,yC,l.z); modelGroup.add(box);
+    }
+  });
+
+  // Axes
+  const axGrp = new THREE.Group();
+  const o = new THREE.Vector3(0,0.02,0);
+  axGrp.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0),o,.8,0xff4444,.1,.06));
+  axGrp.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0),o,.8,0x44ff44,.1,.06));
+  axGrp.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1),o,.8,0x4488ff,.1,.06));
+  modelGroup.add(axGrp);
+}
+
+// ─── CALCULATOR ───
+const Calculator = {
+  computeLength() {
+    return (parseInt($('numArchesInput').value)-1) * parseFloat($('spacingInput').value);
+  },
+  getDimensions() {
+    const t = $('typeSelect').value;
+    const w = parseFloat($('widthInput').value)||3.2;
+    const L = this.computeLength();
+    const sp = parseFloat($('spacingInput').value)||1;
+    const n = parseInt($('numArchesInput').value)||2;
+    if (t==='arch') return { type:t, w, L, h:parseFloat($('heightArch').value)||2.1, spacing:sp, nArches:n };
+    if (t==='asymmetric') return { type:t, w, L, h1:parseFloat($('heightAsymHigh').value)||2.1, h2:parseFloat($('heightAsymLow').value)||1.5, spacing:sp, nArches:n };
+    return { type:t, w, L, hWall:parseFloat($('heightGableWall').value)||1.6, hRoof:parseFloat($('heightGableRoof').value)||0.8, spacing:sp, nArches:n };
+  },
+  getBounds() {
+    const w = parseFloat($('widthInput').value)||3.2;
+    const L = this.computeLength();
+    const t = $('typeSelect').value;
+    let maxH = 2.1;
+    if (t==='arch') maxH = parseFloat($('heightArch').value)||2.1;
+    else if (t==='asymmetric') maxH = Math.max(parseFloat($('heightAsymHigh').value)||2.1, parseFloat($('heightAsymLow').value)||1.5);
+    else if (t==='gable') maxH = (parseFloat($('heightGableWall').value)||1.6)+(parseFloat($('heightGableRoof').value)||0.8);
+    return { w, L, maxH };
+  },
+  absX(ref, off, w) { return ref==='left'?-w/2+off:ref==='right'?w/2+off:off; },
+  absZ(ref, off, L) { return ref==='start'?off:ref==='middle'?L/2+off:L+off; },
+  calcSurfaceArea() {
+    const d = this.getDimensions();
+    let area=0, arc=0;
+    if (d.type==='arch') {
+      arc = getArcLength(d.w, d.h);
+      area = arc*d.L + 2*getArchArea(d.w, d.h);
+    } else if (d.type==='asymmetric') {
+      const roof = Math.sqrt(d.w*d.w+(d.h1-d.h2)**2);
+      arc = roof;
+      area = roof*d.L + d.h1*d.L + d.h2*d.L + d.w*(d.h1+d.h2);
+    } else {
+      const slope = Math.sqrt((d.w/2)**2+d.hRoof**2);
+      arc = slope;
+      area = 2*slope*d.L + 2*d.hWall*d.L + d.w*d.hWall + d.w*d.hRoof;
+    }
+    return { area, arc };
+  },
+  getMaterialSummary(state) {
+    const allEl = [...state.clickElements,...state.autoElements];
+    let pvcPipes = allEl.filter(e=>e.type==='pipe').length;
+    let lathsCount = allEl.filter(e=>e.type==='lath').length;
+    state.doorFrames.forEach(d=>{ if(d.mat==='pipe') pvcPipes++; else lathsCount++; });
+    state.tSupports.forEach(t=>{ if(t.mat==='pipe') pvcPipes++; else lathsCount++; });
+    state.laths.forEach(l=>{ if(l.mat==='pvc') pvcPipes++; else lathsCount++; });
+    const surface = this.calcSurfaceArea();
+    const foilNeeded = Math.ceil(surface.area*1.15);
+    const dims = this.getDimensions();
+    const usableArea = (dims.w*dims.L).toFixed(1);
+    return {
+      pvcPipes, lathsCount, doors:state.doorFrames.length, tSupports:state.tSupports.length,
+      windows:state.arcWindows.length, hoses:state.hoses.length, connectors:state.connectors.length,
+      elecWires:state.elecWires.length, barrels:state.barrels.length, plants:state.plants.length,
+      surfaceArea:surface.area.toFixed(1), foilNeeded, arcLength:surface.arc.toFixed(2), usableArea,
+    };
+  },
+};
+
+// ─── UI ───
+const UI = {
+  updateVisibleHeights() {
+    const t = $('typeSelect').value;
+    $('hArch').style.display   = t==='arch'?'flex':'none';
+    $('hAsymH').style.display  = t==='asymmetric'?'flex':'none';
+    $('hAsymL').style.display  = t==='asymmetric'?'flex':'none';
+    $('hGableW').style.display = t==='gable'?'flex':'none';
+    $('hGableR').style.display = t==='gable'?'flex':'none';
+  },
+
+  renderLists(state) {
+    const lists = [
+      { el:$('clickList'),  arr:state.clickElements, key:'click', fmt:e=>`🖱 ${e.type} ${e.orient} X:${e.x.toFixed(1)}` },
+      { el:$('autoList'),   arr:state.autoElements,  key:'auto',  fmt:e=>`🔢 ${e.type} ${e.orient} X:${e.x.toFixed(1)}` },
+      { el:$('doorList'),   arr:state.doorFrames,    key:'door',  fmt:d=>`🚪 ${d.w}×${d.h}m` },
+      { el:$('tList'),      arr:state.tSupports,     key:'t',     fmt:t=>`🦾 T H:${t.height}m` },
+      { el:$('arcWinList'), arr:state.arcWindows,    key:'arcwin',fmt:aw=>`🪟 ${aw.side==='left'?'L':'R'} Z:${aw.zstart.toFixed(1)}+${aw.zlen}` },
+      { el:$('lathList'),   arr:state.laths,         key:'lath',  fmt:l=>`🪵 ${l.orient}` },
+      { el:$('plantList'),  arr:state.plants,        key:'plant', fmt:p=>`🌱 ${p.type}` },
+      { el:$('barrelList'), arr:state.barrels,       key:'barrel',fmt:b=>`🛢 ${b.size}L` },
+      { el:$('hoseList'),   arr:state.hoses,         key:'hose',  fmt:()=>'💧' },
+      { el:$('connList'),   arr:state.connectors,    key:'conn',  fmt:()=>'🔌' },
+      { el:$('elecList'),   arr:state.elecWires,     key:'elec',  fmt:()=>'⚡' },
+    ];
+    lists.forEach(({ el, arr, key, fmt }) => {
+      if (!el) return;
+      el.innerHTML = arr.map((e,i)=>
+        `<div class="custom-element-item"><span>${fmt(e)}</span><button data-idx="${i}" data-list="${key}">✕</button></div>`
+      ).join('');
+    });
+  },
+
+  updateWindowStatus(state) {
+    const el = $('winStatusInfo');
+    if (!el) return;
+    if (state.arcWindows.length===0) { el.textContent='No windows added.'; return; }
+    const status = state.windowOpenAngle>0
+      ? `<span class="status-ok">🟢 OPEN – ${state.windowOpenAngle}°</span>`
+      : `<span style="color:#6b7a99">⚫ CLOSED</span>`;
+    el.innerHTML = `${state.arcWindows.length} windows – ${status}`;
+  },
+
+  updateFoundationInfo() {
+    const type = $('foundationType').value;
+    const depth = parseInt($('foundDepth').value)||50;
+    const soil = $('soilType').value;
+    const soilFactor = { soft:.5, medium:1, hard:1.6, rock:2.5 };
+    const typeFactor = { buried:.8, driven:1, sleeved:1.4, concrete:2.2 };
+    const cap = 500 * soilFactor[soil] * typeFactor[type] * (depth/50);
+    const descriptions = {
+      buried: `PVC pipe directly buried to ${depth}cm. Economical, suitable for smaller greenhouses.`,
+      driven: `PVC pipe driven into the ground. Better load capacity than burying.`,
+      sleeved: `Steel rods driven first, PVC sleeves fitted over them. Reinforced approach.`,
+      concrete: `Most solid: PVC pipe set in a concrete base.`,
+    };
+    const fd = $('foundationDetails');
+    if (fd) fd.innerHTML = `<p style="font-size:.42rem;color:#9ca3af;line-height:1.5">${descriptions[type]}</p>`;
+    const cls = cap>1000?'status-ok':cap>500?'status-warn':'status-danger';
+    const verdict = cap>1000 ? '✅ Excellent' : cap>500 ? '⚠️ Medium' : '❌ Poor!';
+    const fr = $('foundationResult');
+    if (fr) fr.innerHTML = `
+      <div style="font-size:.48rem;font-weight:700;margin-bottom:4px">📊 Foundation load estimate:</div>
+      <div class="calc-result">
+        <div class="calc-item"><div class="val ${cls}">${cap.toFixed(0)} N</div><div class="lbl">Pull-out capacity</div></div>
+        <div class="calc-item"><div class="val">${depth} cm</div><div class="lbl">Install depth</div></div>
+      </div>
+      <div style="margin-top:4px;font-size:.42rem;color:${cap>1000?'#4ade80':cap>500?'#fbbf24':'#f87171'}">${verdict}</div>`;
+  },
+
+  updateTroskovnik(state) {
+    const m = Calculator.getMaterialSummary(state);
+    const dims = Calculator.getDimensions();
+    const rows = [
+      { naziv:'PVC pipes (arches)',        jed:'pcs', kol:dims.nArches,  cena:3.5 },
+      { naziv:'PVC pipes (extra)',         jed:'pcs', kol:m.pvcPipes,    cena:2.5 },
+      { naziv:'Wood battens',              jed:'pcs', kol:m.lathsCount,  cena:2.0 },
+      { naziv:'Doors',                     jed:'pcs', kol:m.doors,       cena:25.0 },
+      { naziv:'T-supports',                jed:'pcs', kol:m.tSupports,   cena:8.0 },
+      { naziv:'Side windows (PVC)',        jed:'pcs', kol:m.windows,     cena:18.0 },
+      { naziv:'Hoses',                     jed:'m',   kol:m.hoses*6,     cena:1.2 },
+      { naziv:'Connectors',                jed:'pcs', kol:m.connectors,  cena:2.5 },
+      { naziv:'Electric wires',            jed:'m',   kol:m.elecWires*6, cena:0.8 },
+      { naziv:'Barrels',                   jed:'pcs', kol:m.barrels,     cena:45.0 },
+      { naziv:'Nylon (polyethylene film)', jed:'m²',  kol:m.foilNeeded,  cena:1.5 },
+    ];
+    let html = `<table class="troskovnik-table"><thead><tr><th>Material</th><th>Unit</th><th>Qty</th><th>Price/unit</th><th>Amount (€)</th></tr></thead><tbody>`;
+    let total = 0;
+    rows.forEach(r => {
+      const iznos = (r.kol*r.cena).toFixed(2);
+      total += parseFloat(iznos);
+      html += `<tr><td>${r.naziv}</td><td>${r.jed}</td><td>${r.kol}</td><td><input type="number" class="cena-input" value="${r.cena}" step="0.1" data-kol="${r.kol}"></td><td class="iznos-cell">${iznos}</td></tr>`;
+    });
+    html += `<tr style="font-weight:700;background:#1e2a3a"><td colspan="4">TOTAL</td><td id="totalCost">${total.toFixed(2)}</td></tr></tbody></table>`;
+    html += `<p style="font-size:.42rem;color:#6b7a99;margin-top:3px">Surface: ${m.surfaceArea} m² | Arc: ${m.arcLength} m | Nylon: ~${m.foilNeeded} m²</p>`;
+    $('troskovnikContent').innerHTML = html;
+  },
+
+  updateNylonPanel(state) {
+    const m = Calculator.getMaterialSummary(state);
+    const ns = $('nylonSurfArea'), nf = $('nylonFoilNeeded'), nu = $('nylonUsable');
+    if (ns) ns.textContent = m.surfaceArea + ' m²';
+    if (nf) nf.textContent = m.foilNeeded + ' m²';
+    if (nu) nu.textContent = m.usableArea + ' m²';
+
+    const items = [];
+    state.doorFrames.forEach((d,i) => items.push({ icon:'🚪', name:`Door ${i+1}`, detail:`${d.w}m × ${d.h}m` }));
+    state.tSupports.forEach((t,i) => items.push({ icon:'🦾', name:`T-support ${i+1}`, detail:`H:${t.height}m` }));
+    state.arcWindows.forEach((aw,i) => items.push({ icon:'🪟', name:`Window ${i+1}`, detail:`Z:${aw.zstart}+${aw.zlen}` }));
+    state.laths.forEach((l,i) => items.push({ icon:'🪵', name:`Batten ${i+1}`, detail:l.orient }));
+    state.plants.forEach((p,i) => items.push({ icon:'🌱', name:`Plant ${i+1}`, detail:`${p.type}` }));
+    state.barrels.forEach((b,i) => items.push({ icon:'🛢', name:`Barrel ${i+1}`, detail:`${b.size}L` }));
+
+    const listEl = $('installedItemsList');
+    if (listEl) {
+      listEl.innerHTML = items.length===0
+        ? '<p style="font-size:.42rem;color:#6b7a99">No extra components installed yet.</p>'
+        : items.map(it=>`<div class="installed-item"><div class="item-name">${it.icon} ${it.name}</div><div class="item-detail">${it.detail}</div></div>`).join('');
+    }
+
+    const dims = Calculator.getDimensions();
+    const arcLen = Calculator.calcSurfaceArea().arc;
+    const instrList = $('nylonInstructionsList');
+    if (instrList) instrList.innerHTML = `
+      <li>Prepare <strong>${m.foilNeeded} m²</strong> of polyethylene film (+15% overlap).</li>
+      <li>Arc length per arch: <strong>${arcLen} m</strong>. Total strip length needed: <strong>${(parseFloat(arcLen)+0.3).toFixed(1)} m</strong>.</li>
+      <li>Width per nylon strip: at least <strong>${(dims.w*1.1).toFixed(1)} m</strong>.</li>
+      <li>Start at Z=0. Secure film to first arch with clips.</li>
+      <li>Pull taut to opposite end (Z=${dims.L.toFixed(1)}m).</li>
+      <li>Secure every arch (${dims.nArches} total, spaced ${dims.spacing}m).</li>
+      <li>Overlap seams by at least <strong>20–30 cm</strong>.</li>
+      <li>Leave openings for doors and windows.</li>
+      <li>Bury bottom edges 10–15 cm in soil around perimeter.</li>
+    `;
+  },
+
+  draw2D(state, canvas, ctx) {
+    const W = canvas.width, H = canvas.height;
+    if (W<10||H<10) return;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#0b0f18'; ctx.fillRect(0,0,W,H);
+    const bounds = Calculator.getBounds();
+    const { w, L } = bounds;
+    const margin = 40;
+    const scale = Math.min((W-2*margin)/w, (H-2*margin)/L);
+    const offX = (W-w*scale)/2, offZ = (H-L*scale)/2;
+    const toX = x => offX+(x+w/2)*scale;
+    const toZ = z => offZ+z*scale;
+    ctx.strokeStyle='#4ade80'; ctx.lineWidth=2;
+    ctx.strokeRect(toX(-w/2), toZ(0), w*scale, L*scale);
+    ctx.fillStyle='#fff'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText(`${w.toFixed(1)}m`, toX(0), toZ(0)-8);
+    ctx.fillText(`${L.toFixed(1)}m`, toX(-w/2)-20, toZ(L/2));
+    ;[...state.clickElements,...state.autoElements,...state.laths].forEach(e=>{
+      if (e.orient==='horizontal') {
+        ctx.fillStyle = (e.type==='pipe'||e.mat==='pvc')?'#d0d0d0':'#8B5A2B';
+        const zs=Math.min(e.zstart,e.zend), ze=Math.max(e.zstart,e.zend);
+        ctx.fillRect(toX(e.x)-2, toZ(zs), 4, (ze-zs)*scale);
+      }
+    });
+    state.doorFrames.forEach(d=>{
+      ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2;
+      ctx.strokeRect(toX(d.x-d.w/2), toZ(d.z)-3, d.w*scale, 6);
+    });
+    if (state.markerPos) {
+      const mx = toX(state.markerPos.x), mz = toZ(state.markerPos.z);
+      ctx.strokeStyle='#fb923c'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(mx-8,mz); ctx.lineTo(mx+8,mz);
+      ctx.moveTo(mx,mz-8); ctx.lineTo(mx,mz+8); ctx.stroke();
+    }
+  },
+};
+
+// ─── APP CONTROLLER ───
+const AppCtrl = {
+  canvas2d: $('canvas2d'),
+  ctx2d: $('canvas2d').getContext('2d'),
+
+  init() {
+    this.loadFromStorage();
+    this.bindEvents();
+    UI.updateVisibleHeights();
+    UI.updateFoundationInfo();
+    this.updateAll();
+    this.startRender();
+    // Hide loading overlay
+    const overlay = $('loadingOverlay');
+    if (overlay) overlay.style.display='none';
+    console.log('✅ Greenhouse 3D Pro ready.');
+  },
+
+  updateAll() {
+    const dims = Calculator.getDimensions();
+    buildScene(dims, State, State.showNylon);
+    const maxDim = Math.max(dims.w, dims.L, dims.h||dims.h1||(dims.hWall+dims.hRoof)||2);
+    controls.target.set(0, maxDim*0.4, dims.L/2);
+    camera.position.set(maxDim*1.5, maxDim*0.9, dims.L/2 - maxDim*1.5);
+    camera.lookAt(0, maxDim*0.35, dims.L/2);
+    controls.update();
+    const ld = $('lengthDisplay');
+    if (ld) ld.value = dims.L.toFixed(2);
+    UI.renderLists(State);
+    if ($('show2D').checked) UI.draw2D(State, this.canvas2d, this.ctx2d);
+    if (State.currentLayer==='cost') UI.updateTroskovnik(State);
+    if (State.currentLayer==='windows') UI.updateWindowStatus(State);
+    if (State.showNylon) UI.updateNylonPanel(State);
+  },
+
+  setView(view) {
+    const dims = Calculator.getDimensions();
+    const maxDim = Math.max(dims.w, dims.L, dims.h||dims.h1||(dims.hWall+dims.hRoof)||2);
+    const cx=0, cy=maxDim*.4, cz=dims.L/2, dist=maxDim*1.8;
+    switch(view) {
+      case 'top':   camera.position.set(cx, cy+dist*1.2, cz); break;
+      case 'front': camera.position.set(cx, cy, cz-dist); break;
+      case 'back':  camera.position.set(cx, cy, cz+dist); break;
+      case 'left':  camera.position.set(cx-dist, cy, cz); break;
+      case 'right': camera.position.set(cx+dist, cy, cz); break;
+    }
+    controls.target.set(cx, cy, cz);
+    controls.update();
+  },
+
+  startRender() {
+    const loop = () => {
+      requestAnimationFrame(loop);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+    loop();
+  },
+
+  saveToStorage() {
+    try { localStorage.setItem('gh3d_v3', JSON.stringify(State.toJSON())); } catch(e) {}
+  },
+  loadFromStorage() {
+    try {
+      const raw = localStorage.getItem('gh3d_v3');
+      if (raw) State.fromJSON(JSON.parse(raw));
+    } catch(e) {}
+  },
+  exportJSON() {
+    const blob = new Blob([JSON.stringify(State.toJSON(),null,2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `greenhouse-${Date.now()}.json`;
+    a.click();
+  },
+  importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try { State.fromJSON(JSON.parse(e.target.result)); UI.updateVisibleHeights(); this.updateAll(); }
+      catch(err) { alert('Invalid JSON file.'); }
+    };
+    reader.readAsText(file);
+  },
+
+  bindEvents() {
+    // Layer tabs
+    document.querySelectorAll('.layer-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.layer-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.layer-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        State.currentLayer = tab.dataset.layer;
+        const layerEl = document.getElementById('layer-'+State.currentLayer);
+        if (layerEl) layerEl.classList.add('active');
+        if (State.currentLayer==='cost') UI.updateTroskovnik(State);
+        if (State.currentLayer==='foundation') UI.updateFoundationInfo();
+        if (State.currentLayer==='windows') UI.updateWindowStatus(State);
+        if (State.currentLayer==='life' && State.showNylon) UI.updateNylonPanel(State);
+      });
+    });
+
+    // Project name
+    $('projectName').addEventListener('input', () => {
+      const lbl = $('projectLabel');
+      if (lbl) lbl.textContent = $('projectName').value||'Greenhouse';
+    });
+
+    // Quick spacing
+    document.querySelectorAll('.quick-btn').forEach(b => {
+      b.addEventListener('click', () => { $('spacingInput').value = b.dataset.spacing; this.updateAll(); });
+    });
+
+    // Dimension inputs
+    ['typeSelect','widthInput','numArchesInput','spacingInput','heightArch','heightAsymHigh','heightAsymLow','heightGableWall','heightGableRoof'].forEach(id => {
+      const el = $(id);
+      if (el) el.addEventListener('input', () => {
+        if (id==='typeSelect') UI.updateVisibleHeights();
+        this.updateAll();
+      });
+    });
+
+    // Sun
+    $('sunSlider').addEventListener('input', e => updateSunPosition(parseFloat(e.target.value)));
+
+    // 2D toggle
+    $('show2D').addEventListener('change', () => {
+      $('viewer2d').classList.toggle('active', $('show2D').checked);
+      if ($('show2D').checked) {
+        const c = this.canvas2d;
+        c.width = $('viewer3d').clientWidth; c.height = 170;
+        UI.draw2D(State, c, this.ctx2d);
+      }
+    });
+
+    // Window angle
+    $('winOpenAngle').addEventListener('input', e => {
+      State.windowOpenAngle = parseFloat(e.target.value);
+      const lbl = $('winAngleLabel');
+      if (lbl) lbl.textContent = State.windowOpenAngle===0?'0° (closed)':State.windowOpenAngle===90?'90° (fully open)':`${State.windowOpenAngle}°`;
+      this.updateAll(); UI.updateWindowStatus(State);
+    });
+    $('winClose').addEventListener('click', () => this.setWinAngle(0));
+    $('winHalf').addEventListener('click',  () => this.setWinAngle(45));
+    $('winFull').addEventListener('click',  () => this.setWinAngle(90));
+    $('winToggleBtn').addEventListener('click', () => {
+      State.allWindowsOpen = !State.allWindowsOpen;
+      this.setWinAngle(State.allWindowsOpen?90:0);
+      $('winToggleBtn').textContent = State.allWindowsOpen?'🔒 Close all':'🌬 Open all';
+    });
+
+    // Foundation
+    ['foundationType','foundDepth','soilType'].forEach(id => {
+      const el = $(id);
+      if (el) el.addEventListener('change', () => UI.updateFoundationInfo());
+    });
+
+    // Statics
+    $('calcBtn').addEventListener('click', () => this.runStaticsCalc());
+
+    // Wind
+    $('windCalcBtn').addEventListener('click', () => this.runWindCalc());
+
+    // Add elements
+    $('addClickBtn').addEventListener('click', () => {
+      const x=parseFloat($('clickX').value)||0;
+      const y=parseFloat($('clickY').value)||1.5;
+      const orient=$('clickOrient').value, type=$('clickType').value, lathDim=$('clickLathDim').value;
+      if (orient==='horizontal') {
+        const zs=parseFloat($('clickZstart').value)||0, ze=parseFloat($('clickZend').value)||2;
+        State.clickElements.push({ x, y, zstart:zs, zend:ze, orient, type, lathDim, ystart:y, yend:y, z:(zs+ze)/2 });
+      } else {
+        const ys=parseFloat($('clickYstart').value)||0, ye=parseFloat($('clickYend').value)||2, z=parseFloat($('clickZ').value)||3;
+        State.clickElements.push({ x, y, z, ystart:ys, yend:ye, orient, type, lathDim, zstart:z, zend:z });
+      }
+      this.updateAll();
+    });
+
+    $('addAutoBtn').addEventListener('click', () => {
+      const bounds = Calculator.getBounds();
+      const x = Calculator.absX($('autoXRef').value, parseFloat($('autoXOff').value)||0, bounds.w);
+      const orient=$('autoOrient').value, type=$('autoType').value, lathDim=$('autoLathDim').value;
+      if (orient==='horizontal') {
+        const y=1.5, zstart=Calculator.absZ($('autoZRef').value, parseFloat($('autoZOff').value)||0, bounds.L);
+        const len=parseFloat($('autoLen').value)||3, zend=zstart+len;
+        State.autoElements.push({ x, y, zstart, zend, orient, type, lathDim, ystart:y, yend:y, z:(zstart+zend)/2 });
+      } else {
+        const z=parseFloat($('autoZ').value)||3, ys=parseFloat($('autoYstart').value)||0, ye=parseFloat($('autoYend').value)||2;
+        State.autoElements.push({ x, y:ys, z, ystart:ys, yend:ye, orient, type, lathDim, zstart:z, zend:z });
+      }
+      this.updateAll();
+    });
+
+    $('addDoorBtn').addEventListener('click', () => {
+      const bounds = Calculator.getBounds();
+      State.doorFrames.push({ w:parseFloat($('doorW').value)||1, h:parseFloat($('doorH').value)||2, x:Calculator.absX($('doorXRef').value, parseFloat($('doorXOff').value)||0, bounds.w), z:parseFloat($('doorZ').value)||0, mat:$('doorMat').value });
+      this.updateAll();
+    });
+
+    $('addTBtn').addEventListener('click', () => {
+      const bounds = Calculator.getBounds();
+      State.tSupports.push({ x:Calculator.absX($('tXRef').value, parseFloat($('tXOff').value)||0, bounds.w), z:parseFloat($('tZ').value)||3, height:parseFloat($('tH').value)||2, width:parseFloat($('tW').value)||0.8, mat:$('tMat').value });
+      this.updateAll();
+    });
+
+    $('addArcWinBtn').addEventListener('click', () => {
+      State.arcWindows.push({ x:parseFloat($('winX').value)||1.6, side:$('winSide').value, zstart:parseFloat($('winZstart').value)||1, zlen:parseFloat($('winZlen').value)||1, y1:parseFloat($('winY1').value)||0.5, y2:parseFloat($('winY2').value)||1.5, pipeR:parseFloat($('winPipeSize').value)||0.020 });
+      this.updateAll(); UI.updateWindowStatus(State);
+    });
+
+    $('addLathBtn').addEventListener('click', () => {
+      const orient=$('lathOrient').value, mat=$('lathMatType').value, dim=$('lathDim').value;
+      const x=parseFloat($('lathX').value)||0, z=parseFloat($('lathZ').value)||0;
+      if (orient==='horizontal') {
+        const y=parseFloat($('lathY').value)||1;
+        State.laths.push({ x, y, z, zstart:parseFloat($('lathZstart').value)||0, zend:parseFloat($('lathZend').value)||2, orient, mat, lathDim:dim, y1:y, y2:y });
+      } else {
+        State.laths.push({ x, z, y:parseFloat($('lathY1').value)||0, zstart:z, zend:z, orient, mat, lathDim:dim, y1:parseFloat($('lathY1').value)||0, y2:parseFloat($('lathY2').value)||2 });
+      }
+      this.updateAll();
+    });
+
+    $('addPlantBtn').addEventListener('click', () => {
+      State.plants.push({ type:$('plantType').value, height:parseFloat($('plantHeight').value)||1.2, x:parseFloat($('plantX').value)||0, z:parseFloat($('plantZ').value)||3, mode:$('plantMode').value });
+      this.updateAll();
+    });
+
+    $('addBarrelBtn').addEventListener('click', () => {
+      State.barrels.push({ size:parseInt($('barrelSize').value), x:parseFloat($('barrelX').value)||1, z:parseFloat($('barrelZ').value)||0.5 });
+      this.updateAll();
+    });
+
+    $('addHoseBtn').addEventListener('click', () => {
+      State.hoses.push({ x:parseFloat($('hoseX').value)||0, y:parseFloat($('hoseY').value)||0.1, zstart:parseFloat($('hoseZstart').value)||0, zend:parseFloat($('hoseZend').value)||6 });
+      this.updateAll();
+    });
+
+    $('addConnBtn').addEventListener('click', () => {
+      State.connectors.push({ x:parseFloat($('connX').value)||0, y:parseFloat($('connY').value)||0.5, z:parseFloat($('connZ').value)||3 });
+      this.updateAll();
+    });
+
+    $('addElecBtn').addEventListener('click', () => {
+      State.elecWires.push({ x:parseFloat($('elecX').value)||0, y:parseFloat($('elecY').value)||2, zstart:parseFloat($('elecZstart').value)||0, zend:parseFloat($('elecZend').value)||6, color1:$('wireColor1').value, color2:$('wireColor2').value });
+      this.updateAll();
+    });
+
+    // Orientation toggles
+    $('clickOrient').addEventListener('change', () => {
+      const isH = $('clickOrient').value==='horizontal';
+      $('clickHorizontalRow').style.display = isH?'flex':'none';
+      $('clickVerticalRow').style.display   = isH?'none':'flex';
+    });
+    $('clickType').addEventListener('change', () => {
+      $('clickLathDimGroup').style.display = $('clickType').value==='lath'?'flex':'none';
+    });
+    $('autoOrient').addEventListener('change', () => {
+      const isH = $('autoOrient').value==='horizontal';
+      $('autoHorizontalRow').style.display = isH?'flex':'none';
+      $('autoVerticalRow').style.display   = isH?'none':'flex';
+    });
+    $('autoType').addEventListener('change', () => {
+      $('autoLathDimGroup').style.display = $('autoType').value==='lath'?'flex':'none';
+    });
+    $('lathOrient').addEventListener('change', () => {
+      const isH = $('lathOrient').value==='horizontal';
+      $('lathHorizontalRow').style.display = isH?'flex':'none';
+      $('lathVerticalRow').style.display   = isH?'none':'flex';
+    });
+    $('plantMode').addEventListener('change', () => {
+      $('bottleMountGroup').style.display = $('plantMode').value==='bottle'?'flex':'none';
+    });
+    $('bottleMount').addEventListener('change', () => {
+      $('hangTargetGroup').style.display = $('bottleMount').value==='hang'?'flex':'none';
+    });
+
+    // Nylon toggle
+    $('showNylon').addEventListener('change', e => {
+      State.showNylon = e.target.checked;
+      $('nylonPanel').style.display = State.showNylon?'block':'none';
+      if (State.showNylon) UI.updateNylonPanel(State);
+      this.updateAll();
+    });
+
+    // Event delegation for delete buttons
+    document.addEventListener('click', e => {
+      const listMap = { click:State.clickElements, auto:State.autoElements, door:State.doorFrames, t:State.tSupports, arcwin:State.arcWindows, lath:State.laths, plant:State.plants, barrel:State.barrels, hose:State.hoses, conn:State.connectors, elec:State.elecWires };
+      if (e.target.dataset.list && e.target.dataset.idx!==undefined) {
+        const list = listMap[e.target.dataset.list];
+        if (list) { list.splice(parseInt(e.target.dataset.idx), 1); this.updateAll(); }
+      }
+    });
+
+    // Cost table price editing
+    document.addEventListener('input', e => {
+      if (e.target.classList.contains('cena-input')) {
+        const cena = parseFloat(e.target.value)||0, kol = parseFloat(e.target.dataset.kol)||0;
+        const row = e.target.closest('tr');
+        if (row) { const cell = row.querySelector('.iznos-cell'); if (cell) cell.textContent = (cena*kol).toFixed(2); }
+        let tot = 0;
+        document.querySelectorAll('.iznos-cell').forEach(c => tot += parseFloat(c.textContent)||0);
+        const tc = $('totalCost'); if (tc) tc.textContent = tot.toFixed(2);
+      }
+    });
+
+    // Update & PDF
+    $('updateBtn').addEventListener('click', () => this.updateAll());
+    $('pdfBtn').addEventListener('click', () => this.exportPDF());
+
+    // Save / Export / Import / Clear
+    $('saveBtn').addEventListener('click', () => {
+      this.saveToStorage();
+      $('saveBtn').textContent='✅ Saved!';
+      setTimeout(()=>$('saveBtn').textContent='💾 Save', 1500);
+    });
+    $('exportBtn').addEventListener('click', () => this.exportJSON());
+    $('importBtn').addEventListener('click', () => $('importFile').click());
+    $('importFile').addEventListener('change', e => { if (e.target.files[0]) this.importJSON(e.target.files[0]); e.target.value=''; });
+    $('clearBtn').addEventListener('click', () => {
+      if (confirm('Clear all saved data and reset?')) {
+        localStorage.removeItem('gh3d_v3');
+        location.reload();
+      }
+    });
+
+    // 3D click → coords
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    renderer.domElement.addEventListener('click', event => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX-rect.left)/rect.width)*2-1;
+      mouse.y = -((event.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(modelGroup.children, true);
+      if (hits.length>0) {
+        const pt = hits[0].point;
+        const bounds = Calculator.getBounds();
+        const cx = clamp(pt.x, -bounds.w/2, bounds.w/2);
+        const cy = clamp(pt.y, 0, bounds.maxH);
+        const cz = clamp(pt.z, 0, bounds.L);
+        State.lastClickPoint = { x:cx, y:cy, z:cz };
+        State.markerPos = { x:cx, y:cy, z:cz };
+        $('clickX').value = cx.toFixed(2);
+        $('clickY').value = cy.toFixed(2);
+        $('clickZ').value = cz.toFixed(2);
+        $('clickZstart').value = Math.max(0, cz-1).toFixed(1);
+        $('clickZend').value   = Math.min(bounds.L, cz+1).toFixed(1);
+        $('winX').value = Math.abs(cx).toFixed(2);
+        $('coordsHud').textContent = `📍 X:${cx.toFixed(2)} Y:${cy.toFixed(2)} Z:${cz.toFixed(2)}`;
+        const mhud = $('markerHud');
+        mhud.style.display='block';
+        mhud.textContent = `✛ ${cx.toFixed(2)}, ${cy.toFixed(2)}, ${cz.toFixed(2)}`;
+        placeMarker(cx, cy, cz);
+        if ($('show2D').checked) UI.draw2D(State, this.canvas2d, this.ctx2d);
+      }
+    });
+
+    renderer.domElement.addEventListener('mousemove', event => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX-rect.left)/rect.width)*2-1;
+      mouse.y = -((event.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(modelGroup.children, true);
+      if (hits.length>0) {
+        const pt = hits[0].point;
+        $('coordsHud').textContent = `📍 X:${pt.x.toFixed(2)} Y:${pt.y.toFixed(2)} Z:${pt.z.toFixed(2)}`;
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA') return;
+      if (e.key==='r'||e.key==='R') this.setView('front');
+      if (e.key==='t'||e.key==='T') this.setView('top');
+      if (e.key==='g'||e.key==='G') $('show2D').click();
+      if (e.key==='n'||e.key==='N') $('showNylon').click();
+      if ((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='S')) { e.preventDefault(); this.saveToStorage(); }
+    });
+
+    // Panel resizer
+    const resizer = $('panelResizer');
+    const panel = $('panel');
+    let dragging=false, startX=0, startW=0;
+    resizer.addEventListener('mousedown', e => { dragging=true; startX=e.clientX; startW=panel.offsetWidth; resizer.classList.add('dragging'); e.preventDefault(); });
+    document.addEventListener('mousemove', e => { if (!dragging) return; panel.style.width = clamp(startW+(e.clientX-startX),200,680)+'px'; resizeRenderer(); });
+    document.addEventListener('mouseup', () => { if (dragging) { dragging=false; resizer.classList.remove('dragging'); } });
+
+    window.addEventListener('resize', () => {
+      resizeRenderer();
+      this.canvas2d.width = $('viewer3d').clientWidth;
+      this.canvas2d.height = 170;
+      if ($('show2D').checked) UI.draw2D(State, this.canvas2d, this.ctx2d);
+    });
+  },
+
+  setWinAngle(deg) {
+    State.windowOpenAngle = deg;
+    $('winOpenAngle').value = deg;
+    const lbl = $('winAngleLabel');
+    if (lbl) lbl.textContent = deg===0?'0° (closed)':deg===90?'90° (fully open)':`${deg}°`;
+    this.updateAll(); UI.updateWindowStatus(State);
+  },
+
+  runStaticsCalc() {
+    const dims = Calculator.getDimensions();
+    const w=dims.w, L=dims.L, spacing=dims.spacing;
+    const h = dims.h||dims.h1||(dims.hWall+(dims.hRoof||0))||2;
+    const pvcDiamMm = parseInt($('pvcDiam').value);
+    const wallMm = pvcDiamMm===25?1.5:pvcDiamMm===32?2.0:pvcDiamMm===40?2.5:pvcDiamMm===50?3.0:3.5;
+    const OD=pvcDiamMm/1000, ID=(pvcDiamMm-2*wallMm)/1000;
+    const I = Math.PI*(OD**4-ID**4)/64, E=2.8e9;
+    const arcLen = getArcLength(w, h), EI=E*I;
+    const snowLoad=parseFloat($('snowLoad').value), windKmh=parseFloat($('calcWindSpeed').value);
+    const windMs=windKmh/3.6, foilGm2=parseInt($('foilWeight').value);
+    const rho=1.225, q=0.5*rho*windMs**2*0.8;
+    const snowN=snowLoad*9.81*w*spacing, windN=q*w*spacing, foilN=(foilGm2/1000)*9.81*arcLen*spacing;
+    const totalLoad=snowN+windN+foilN, qm=totalLoad/arcLen;
+    const Mmax=qm*arcLen**2/8, sigma=Mmax*(OD/2)/I;
+    const pvcYield=40e6, sf=pvcYield/sigma;
+    const Pcr=Math.PI**2*EI/arcLen**2, buckRatio=Pcr/(totalLoad/2);
+    const foilN_m=foilGm2/1000*1000*9.81*0.3, maxSpacing=Math.sqrt(8*foilN_m/q)*0.5;
+    const foilOk=spacing<=maxSpacing;
+    $('calcResults').style.display='block';
+    const sfClass=sf>=3?'status-ok':sf>=1.5?'status-warn':'status-danger';
+    $('calcResultGrid').innerHTML=`
+      <div class="calc-item"><div class="val">${(sigma/1e6).toFixed(1)} MPa</div><div class="lbl">Max PVC stress</div></div>
+      <div class="calc-item"><div class="val ${sfClass}">${sf.toFixed(2)}</div><div class="lbl">Safety factor</div></div>
+      <div class="calc-item"><div class="val">${(Pcr/1000).toFixed(1)} kN</div><div class="lbl">Critical buckling</div></div>
+      <div class="calc-item"><div class="val">${buckRatio.toFixed(1)}×</div><div class="lbl">Buckling reserve</div></div>
+      <div class="calc-item"><div class="val">${Mmax.toFixed(0)} Nm</div><div class="lbl">Max bending moment</div></div>
+      <div class="calc-item"><div class="val ${foilOk?'status-ok':'status-danger'}">${maxSpacing.toFixed(2)}m</div><div class="lbl">Max allowed spacing</div></div>`;
+    const sfText=sf>=3?'✅ Safe':sf>=1.5?'⚠️ Marginal':'❌ Dangerous';
+    let v=`<strong class="${sfClass}">${sfText} (SF = ${sf.toFixed(2)})</strong><br>PVC ∅${pvcDiamMm}mm, arc: ${arcLen.toFixed(2)}m<br>Load/arch: ${totalLoad.toFixed(0)} N (snow: ${snowN.toFixed(0)} N, wind: ${windN.toFixed(0)} N, film: ${foilN.toFixed(0)} N)<br>`;
+    v += foilOk
+      ? `<span class="status-ok">✅ Arch spacing (${spacing}m) OK – max ${maxSpacing.toFixed(2)}m</span>`
+      : `<span class="status-danger">❌ Arch spacing too large! Max = ${maxSpacing.toFixed(2)}m</span>`;
+    $('calcVerdict').innerHTML=v;
+  },
+
+  runWindCalc() {
+    const dims=Calculator.getDimensions();
+    const w=dims.w, L=dims.L, spacing=dims.spacing, nArches=dims.nArches;
+    const h=dims.h||dims.h1||(dims.hWall+(dims.hRoof||0))||2;
+    const windKmh=parseFloat($('windSpeed').value), windMs=windKmh/3.6;
+    const windDir=$('windDir').value, windZone=parseInt($('windZone').value);
+    const rho=1.225, q=0.5*rho*windMs**2;
+    const Cd=windDir==='front'?1.2:windDir==='side'?0.8:1.0;
+    const exposureArea=windDir==='front'?w*h:windDir==='side'?L*h:(w*h+L*h)*0.7;
+    const totalForce=q*Cd*exposureArea, forcePerArch=totalForce/nArches;
+    const zoneMaxSpeeds=[90,130,160,200], maxZone=zoneMaxSpeeds[windZone-1];
+    const pct=Math.min(100,(windKmh/maxZone)*100);
+    const anchorReq=q*0.5*w*spacing;
+    const pvcD=parseInt($('pvcDiam').value)||32, wallMm2=pvcD===25?1.5:pvcD===32?2.0:pvcD===40?2.5:pvcD===50?3.0:3.5;
+    const OD=pvcD/1000, ID=(pvcD-2*wallMm2)/1000, I2=Math.PI*(OD**4-ID**4)/64, EI2=2.8e9*I2;
+    const arcLen2=getArcLength(w,h), Pcr2=Math.PI**2*EI2/arcLen2**2;
+    const safetyWind=Pcr2/(forcePerArch*2);
+    const swClass=safetyWind>=3?'status-ok':safetyWind>=1.5?'status-warn':'status-danger';
+    const maxAllowedSpacing=Math.sqrt(8*300/q), foilRisk=spacing>maxAllowedSpacing;
+    $('windResults').style.display='block';
+    $('windBars').innerHTML=`
+      <div><div style="display:flex;justify-content:space-between;font-size:.41rem;margin-bottom:1px"><span>💨 Wind pressure</span><span>${q.toFixed(0)} Pa</span></div><div class="wind-bar"><div class="wind-fill" style="width:${pct}%;background:${pct<50?'#4ade80':pct<80?'#fbbf24':'#f87171'}"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:.41rem;margin-bottom:1px"><span>🏗 Force/arch</span><span>${forcePerArch.toFixed(0)} N</span></div><div class="wind-bar"><div class="wind-fill" style="width:${Math.min(100,forcePerArch/50)}%;background:#60a5fa"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:.41rem;margin-bottom:1px"><span>⚓ Anchor pull-out</span><span>${anchorReq.toFixed(0)} N</span></div><div class="wind-bar"><div class="wind-fill" style="width:${Math.min(100,anchorReq/30)}%;background:#fb923c"></div></div></div>`;
+    $('windVerdict').innerHTML=`<strong class="${swClass}">Wind ${windKmh} km/h – ${windKmh<=maxZone?'✅ Within zone':'❌ Exceeds zone!'}</strong><br>Zone ${windZone} (max ${maxZone} km/h) | Total force: ${totalForce.toFixed(0)} N<br>Safety factor: <span class="${swClass}">${safetyWind.toFixed(2)}</span><br>${safetyWind<1.5?'<span class="status-danger">❌ Risk of collapse!</span>':safetyWind<3?'<span class="status-warn">⚠️ Marginal</span>':'<span class="status-ok">✅ Stable</span>'}`;
+    $('windSpacer').innerHTML=foilRisk
+      ?`<span class="status-danger">❌ Arch spacing ${spacing}m too large for ${windKmh} km/h! Max: ${maxAllowedSpacing.toFixed(2)}m</span>`
+      :`<span class="status-ok">✅ Arch spacing ${spacing}m safe for ${windKmh} km/h.</span>`;
+  },
+
+  async exportPDF() {
+    const projectName = $('projectName').value||'Greenhouse';
+    renderer.render(scene, camera);
+    await new Promise(r => setTimeout(r, 300));
+    const img3d = renderer.domElement.toDataURL('image/jpeg', 0.85);
+    const dims = Calculator.getDimensions();
+    const m = Calculator.getMaterialSummary(State);
+    const h = dims.h||dims.h1||(dims.hWall+dims.hRoof)||2;
+    const totalCost = $('totalCost')?.textContent||'–';
+    const content = `
+<div style="font-family:'Segoe UI',sans-serif;color:#000;padding:10px">
+  <h2 style="color:#16a34a;border-bottom:2px solid #16a34a;padding-bottom:6px">📐 ${projectName} – Technical Documentation</h2>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:12px">
+    <tr><td style="padding:3px 8px"><b>Type:</b> ${dims.type}</td><td><b>Dimensions:</b> ${dims.w}m × ${dims.L.toFixed(1)}m × ${h.toFixed(1)}m</td></tr>
+    <tr><td style="padding:3px 8px"><b>No. arches:</b> ${dims.nArches}</td><td><b>Spacing:</b> ${dims.spacing}m</td></tr>
+    <tr><td style="padding:3px 8px"><b>Surface area:</b> ${m.surfaceArea} m²</td><td><b>Nylon needed:</b> ${m.foilNeeded} m²</td></tr>
+  </table>
+  <h3 style="color:#16a34a">3D View</h3>
+  <img src="${img3d}" style="max-width:100%;border:1px solid #ccc;margin:6px 0;border-radius:4px">
+  <h3 style="color:#16a34a">Material Specification</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <tr style="background:#e8f5e9"><th style="border:1px solid #ccc;padding:4px">Material</th><th style="border:1px solid #ccc;padding:4px">Qty</th></tr>
+    <tr><td style="border:1px solid #ddd;padding:3px 6px">PVC pipes (arches)</td><td style="border:1px solid #ddd;padding:3px 6px;text-align:center">${dims.nArches}</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:3px 6px">Nylon film</td><td style="border:1px solid #ddd;padding:3px 6px;text-align:center">${m.foilNeeded} m²</td></tr>
+    <tr><td style="border:1px solid #ddd;padding:3px 6px">Doors</td><td style="border:1px solid #ddd;padding:3px 6px;text-align:center">${m.doors}</td></tr>
+    <tr style="font-weight:700;background:#f0fdf4"><td colspan="1" style="border:1px solid #ccc;padding:4px">Total estimated cost</td><td style="border:1px solid #ccc;padding:4px;text-align:center">${totalCost} €</td></tr>
+  </table>
+  <p style="font-size:9px;color:#666;margin-top:12px;border-top:1px solid #ccc;padding-top:6px">Generated: ${new Date().toLocaleDateString()} | Greenhouse 3D Pro</p>
+</div>`;
+    const rc = $('report-container');
+    rc.innerHTML = content;
+    rc.style.cssText = 'position:fixed;left:0;top:0;width:800px;z-index:9999;background:#fff;';
+    await new Promise(r => setTimeout(r, 400));
+    try {
+      await html2pdf().set({
+        margin:[8,8,8,8],
+        filename:`${projectName.replace(/\s+/g,'-')}-${Date.now()}.pdf`,
+        image:{ type:'jpeg', quality:0.85 },
+        html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false },
+        jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' },
+      }).from(rc).save();
+    } catch(e) { console.error('PDF error:', e); alert('PDF export failed. Check console.'); }
+    rc.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;background:#fff;';
+  },
+};
+
+// Expose for inline onclick handlers
+window.AppCtrl = AppCtrl;
+
+// Boot
+AppCtrl.init();
+
+})(); // end async IIFE
+</script>
+</body>
+</html>
